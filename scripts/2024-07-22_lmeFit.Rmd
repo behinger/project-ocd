@@ -112,16 +112,16 @@ f_rt_Part_Item_Triplet= @formula(rt ~ group*looked_at + looked_right*group+(1 +l
 m_rt_zcPart = fit(MixedModel, f_rt_zcPart, jl_data_entrytime;contrasts=c_rt);
 m_rt_Part = fit(MixedModel, f_rt_Part, jl_data_entrytime;contrasts=c_rt);
 m_rt_Part_Item = fit(MixedModel, f_rt_Part_Item, jl_data_entrytime;contrasts=c_rt);
-m_rt_Part_Item_Triplet = fit(MixedModel, f_rt_Part_Item_Triplet, jl_data_entrytime;contrasts=c_rt);
+#m_rt_Part_Item_Triplet = fit(MixedModel, f_rt_Part_Item_Triplet, jl_data_entrytime;contrasts=c_rt);
 ```
 ```{r include=FALSE}
 m_rt_zcPart <- julia_eval("robject(:lmerMod, Tuple([m_rt_zcPart,jl_data_entrytime]));",need_return="R")
 m_rt_Part <- julia_eval("robject(:lmerMod, Tuple([m_rt_Part,jl_data_entrytime]));",need_return="R")
 m_rt_Part_Item <- julia_eval("robject(:lmerMod, Tuple([m_rt_Part_Item,jl_data_entrytime]));",need_return="R")
-m_rt_Part_Item_Triplet <- julia_eval("robject(:lmerMod, Tuple([m_rt_Part_Item_Triplet,jl_data_entrytime]));",need_return="R")
+#m_rt_Part_Item_Triplet <- julia_eval("robject(:lmerMod, Tuple([m_rt_Part_Item_Triplet,jl_data_entrytime]));",need_return="R")
 ```
 ```{r}
-anova(m_rt_zcPart,m_rt_Part,m_rt_Part_Item,m_rt_Part_Item_Triplet)
+anova(m_rt_zcPart,m_rt_Part,m_rt_Part_Item)#,m_rt_Part_Item_Triplet)
 ```
 ```{julia}
 tpl = (tmp,jl_data_entrytime)
