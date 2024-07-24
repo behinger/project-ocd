@@ -75,7 +75,8 @@ library(lmerTest)
 data_dwelltime$group <- relevel(as.factor(data_dwelltime$group),ref = "healthy")
 
 mlm_dwelltime <- lmer(dwell_diff ~ group + stim_ocd + stim_pho + stim_neg  + group:stim_ocd + group:stim_pho + group:stim_neg +
-                        (1 + stim_ocd + stim_pho + stim_neg | participant) + (1 + group | picture_pair_countingindex),
+                        (1 + stim_ocd + stim_pho + stim_neg || participant),
+                        #(1 + group | picture_pair_countingindex),
                       data = data_dwelltime,
                       REML=TRUE,
                       control = lmerControl(), # default optimiser
@@ -83,8 +84,18 @@ mlm_dwelltime <- lmer(dwell_diff ~ group + stim_ocd + stim_pho + stim_neg  + gro
 summary(mlm_dwelltime)
 ```
 
+```{R}
+# find ID <-> group mapping
+df = data_dwelltime%>%select(participant,group)%>%unique()
+
+# extract the individual participant coefficient for the OCD stim effect
+df$stim_ocd = coef(mlm_dwelltime)$participant$stim_ocd + coef(mlm_dwelltime)$participant$groupocd + coef(mlm_dwelltime)$participant$`groupocd:stim_ocd`
+df
+```
 ```{julia}
 using RCall
+using MixedModels
+using JellyMe4
 jl_data_entrytime = @rget data_entrytime
 
 rt_form= @formula(rt ~ group*looked_at + looked_right*group+zerocorr(1 +looked_at+looked_right| participant))
@@ -97,6 +108,14 @@ tmp = fit(MixedModel, rt_form, jl_data_entrytime;contrasts=Dict(:group=>DummyCod
 #tupl = (tmp,jl_data_entrytime);
 #@rput(tupl);
 ```
+```{julia}
+typeof(tpl)
+```
+```{julia}
+tpl = (tmp,jl_data_entrytime)
+@rput(tpl)
+```
+
 ```{R}
 #j$assign("form", formula(mlm_dwelltime))
 j$assign("jl_data_dwelltime", data_dwelltime)
