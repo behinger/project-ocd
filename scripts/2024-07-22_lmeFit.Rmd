@@ -10,7 +10,7 @@ using Pkg
 Pkg.activate(".")
 Pkg.add(["MixedModels","JellyMe4","RCall"])
   
-ENV["LMER"] ="lmerTest::lmer"
+ENV["LMER"] ="afex::lmer_alt"#"lmerTest::lmer"
 ```
 
 ```{r}
@@ -65,7 +65,7 @@ data_entrytime$not_looked_at[ix] = "neg"
 
 ```{r}
 library(dplyr)
-
+library(afex)
 library(lme4)
 library(multcomp)
 library(lmerTest)
@@ -92,24 +92,36 @@ df = data_dwelltime%>%select(participant,group)%>%unique()
 df$stim_ocd = coef(mlm_dwelltime)$participant$stim_ocd + coef(mlm_dwelltime)$participant$groupocd + coef(mlm_dwelltime)$participant$`groupocd:stim_ocd`
 df
 ```
-```{julia}
+```{julia include=FALSE}
 using RCall
 using MixedModels
 using JellyMe4
 jl_data_entrytime = @rget data_entrytime
 
-rt_form= @formula(rt ~ group*looked_at + looked_right*group+zerocorr(1 +looked_at+looked_right| participant))
+c_rt = Dict(:group=>DummyCoding(;base="healthy"),:looked_right=>EffectsCoding(),:looked_at=>DummyCoding(;base="neutral"))
+            
+f_rt_zcPart= @formula(rt ~ group*looked_at + looked_right*group+zerocorr(1 +looked_at+looked_right| participant))
+
+f_rt_Part= @formula(rt ~ group*looked_at + looked_right*group+(1 +looked_at+looked_right| participant))
+
+f_rt_Part_Item= @formula(rt ~ group*looked_at + looked_right*group+(1 +looked_at+looked_right| participant)+(1 + group | picture_pair_countingindex))
+
+f_rt_Part_Item_Triplet= @formula(rt ~ group*looked_at + looked_right*group+(1 +looked_at+looked_right| participant)+(1 + looked_at+looked_right| triplet)+(1 + group | picture_pair_countingindex))
 
 
-tmp = fit(MixedModel, rt_form, jl_data_entrytime;contrasts=Dict(:group=>DummyCoding(;base="healthy"),
-                                                                :looked_right=>EffectsCoding(),
-                                                                :looked_at=>DummyCoding(;base="neutral")));
-
-#tupl = (tmp,jl_data_entrytime);
-#@rput(tupl);
+m_rt_zcPart = fit(MixedModel, f_rt_zcPart, jl_data_entrytime;contrasts=c_rt);
+m_rt_Part = fit(MixedModel, f_rt_Part, jl_data_entrytime;contrasts=c_rt);
+m_rt_Part_Item = fit(MixedModel, f_rt_Part_Item, jl_data_entrytime;contrasts=c_rt);
+m_rt_Part_Item_Triplet = fit(MixedModel, f_rt_Part_Item_Triplet, jl_data_entrytime;contrasts=c_rt);
 ```
-```{julia}
-typeof(tpl)
+```{r include=FALSE}
+m_rt_zcPart <- julia_eval("robject(:lmerMod, Tuple([m_rt_zcPart,jl_data_entrytime]));",need_return="R")
+m_rt_Part <- julia_eval("robject(:lmerMod, Tuple([m_rt_Part,jl_data_entrytime]));",need_return="R")
+m_rt_Part_Item <- julia_eval("robject(:lmerMod, Tuple([m_rt_Part_Item,jl_data_entrytime]));",need_return="R")
+m_rt_Part_Item_Triplet <- julia_eval("robject(:lmerMod, Tuple([m_rt_Part_Item_Triplet,jl_data_entrytime]));",need_return="R")
+```
+```{r}
+anova(m_rt_zcPart,m_rt_Part,m_rt_Part_Item,m_rt_Part_Item_Triplet)
 ```
 ```{julia}
 tpl = (tmp,jl_data_entrytime)
