@@ -301,10 +301,28 @@ julia_command("h1_fm_excl_triplet_id = fit(LinearMixedModel, h1_form_excl_triple
 julia_command("h1_fm_excl_triplet_item = fit(LinearMixedModel, h1_form_excl_triplet_item, jl_data_dwelltime)")
 julia_command("h1_fm_excl_id_item = fit(LinearMixedModel, h1_form_excl_id_item, jl_data_dwelltime)")
 ```
+## Test of Hypotheses Based on Multilevel Model
+To establish contrast codes that directly test the hypotheses, we first code the hypotheses we want to test. Then, we fit the established effects in the contrast() function. This function allows direct inspection of effects. The p-values are estimated by the Kenward-Roger method. The p-values are unadjusted.
+```{r generalised hypotheses matrices}
+# Define the model comparisons to test the specific hypothesis of hypothesis 2
+g = (glht(mlm_dwelltime, (c("groupocd:stim_ocd - groupocd = 0", # Patients with OCD look at idiosyncratic OCD-relevant material longer compared to neutral material (maintenance bias within group)
+                            "groupocd:stim_ocd - groupocd:stim_neg = 0", # Patients with OCD look at idiosyncratic OCD-relevant material longer compared to negative material (maintenance bias within group)
+                            "groupocd:stim_ocd - stim_ocd = 0", # Patients with OCD will show a more pronounced maintenance bias compared to healthy participants (maintenance bias between groups)
+                            "groupocd:stim_ocd -  groupspider:stim_pho = 0" # Patients with OCD will show a more pronounced maintenance to idiosyncratic disorder-specific material compared to patients with spider phobia (maintenance bias between group)
+))))
+
+# Kenward-Roger is a more conservative method than the likelihood ratio test 
+# Likelihood ratio tests always compares two models with each other 
+# this is easy when the contrast is a treatment effect, but more difficult if we have three variables
+# Deviation from preregistration - but this option is better, as 
+# 1. Contrasts are more easily to be implemented with contest(), as we have many different contrasts and three groups that we want to compare within- and between-subjects (LR would only allow two comparisons at a time)
+# 2. Kenward-Roger is more conservative than Likelihood Ratio Test
+contest(mlm_dwelltime,g$linfct,joint=FALSE)#,ddf="Kenward-Roger")
+```
 
 # Hypothesis 2: Vigilance Bias 
 *From Complex to Simple Multilevel Models*
-## Choice (wo Entry Time)
+## Hypothesis 2a: Choice (wo Entry Time)
 ```{r create julia models for H2a choice}
 # Model 1: Most Complex Model
 julia_command("h2a_glm_form_complex = @formula(response ~ group + stim_ocd + stim_pho + stim_neg  + group&stim_ocd + group&stim_pho + group&stim_neg + 
@@ -361,7 +379,8 @@ julia_command("h2a_glm_form_excl_id_item = @formula(response ~ group + stim_ocd 
 julia_command("glm_form= @formula(response ~ group + stim_ocd + stim_pho + stim_neg  + group&stim_ocd + group&stim_pho + group&stim_neg + 
               zerocorr(1 + stim_ocd + stim_pho + stim_neg | participant))")
 ```
-## Hypothesis 2.1: Evaluate Models 
+## Hypothesis 2a: Evaluate Models 
+# ERROR IN MODELS - CHECK WHY
 ```{r evaluate julia models for H2a}
 # Model 1
 julia_command("h2a_glm_fm_complex = fit(MixedModel, h2a_glm_form_complex, jl_data_entrytime,Bernoulli();contrasts=Dict(:group=>DummyCoding(;base=\"healthy\")))")
@@ -382,7 +401,7 @@ julia_command("h2a_glm_fm_excl_triplet_item = fit(MixedModel, h2a_glm_form_excl_
 julia_command("h2a_glm_fm_excl_id_item = fit(MixedModel, h2a_glm_form_excl_id_item, jl_data_entrytime,Bernoulli();contrasts=Dict(:group=>DummyCoding(;base=\"healthy\")))")
 ```
 
-## Entry Time
+## Hypothesis 2b: Entry Time
 # QUESTION: correct that only one random effect?
 ```{r create julia models for h2b choice}
 # Model 1: Most Complex Model
@@ -394,8 +413,8 @@ julia_command("h2b_form_item_zerocorr = @formula(rt ~ group*looked_at + looked_r
               zerocorr(1 + group | picture_pair_countingindex))")
 ```
 
-## Hypothesis 2.1: Define Effect and Dummy Coding 
-```{r define effect and dummy coding julia models for h2b}
+## Hypothesis 2b: Evaluate Models
+```{r evaluate julia models for h2b}
 # Model 1
 julia_command("h2b_fm_complex = fit(MixedModel, h2b_form_complex, jl_data_entrytime;contrasts=Dict(
        :group=>DummyCoding(;base=\"healthy\"),:looked_right=>EffectsCoding(),:looked_at=>DummyCoding(;base=\"neutral\")));")
@@ -406,8 +425,8 @@ julia_command("h2b_fm_item_zc = fit(MixedModel, h2b_form_item_zerocorr, jl_data_
 ```
 
 
-## Hypothesis 2.1: Evaluate Models
-```{r evaluate julia models for H2b}
+## Hypothesis 2b: Translate Models to R
+```{r translate julia models for H2b}
 # Model 1
 julia_command("tupl_h2b_fm_complex = (h2b_fm_complex,jl_data_entrytime);")
 
@@ -421,26 +440,6 @@ julia_command("tupl_h2b_fm_item_zc = (h2b_fm_item_zc,jl_data_entrytime);")
 # Transform to R
 # julia_command("@rput(tupl_h2b_fm_item_zc);")
 # julia_command("typeof(tupl_h2b_fm_item_zc)")
-```
-
-# Test of Hypotheses Based on Multilevel Model
-To establish contrast codes that directly test the hypotheses, we first code the hypotheses we want to test. Then, we fit the established effects in the contrast() function. This function allows direct inspection of effects. The p-values are estimated by the Kenward-Roger method. The p-values are unadjusted.
-
-```{r generalised hypotheses matrices}
-# Define the model comparisons to test the specific hypothesis of hypothesis 2
-g = (glht(mlm_dwelltime, (c("groupocd:stim_ocd - groupocd = 0", # Patients with OCD look at idiosyncratic OCD-relevant material longer compared to neutral material (maintenance bias within group)
-                            "groupocd:stim_ocd - groupocd:stim_neg = 0", # Patients with OCD look at idiosyncratic OCD-relevant material longer compared to negative material (maintenance bias within group)
-                            "groupocd:stim_ocd - stim_ocd = 0", # Patients with OCD will show a more pronounced maintenance bias compared to healthy participants (maintenance bias between groups)
-                            "groupocd:stim_ocd -  groupspider:stim_pho = 0" # Patients with OCD will show a more pronounced maintenance to idiosyncratic disorder-specific material compared to patients with spider phobia (maintenance bias between group)
-))))
-
-# Kenward-Roger is a more conservative method than the likelihood ratio test 
-# Likelihood ratio tests always compares two models with each other 
-# this is easy when the contrast is a treatment effect, but more difficult if we have three variables
-# Deviation from preregistration - but this option is better, as 
-# 1. Contrasts are more easily to be implemented with contest(), as we have many different contrasts and three groups that we want to compare within- and between-subjects (LR would only allow two comparisons at a time)
-# 2. Kenward-Roger is more conservative than Likelihood Ratio Test
-contest(mlm_dwelltime,g$linfct,joint=FALSE)#,ddf="Kenward-Roger")
 ```
 
 
