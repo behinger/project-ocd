@@ -14,8 +14,8 @@ ENV["LMER"] ="afex::lmer_alt"#"lmerTest::lmer"
 ```
 
 ```{r}
-data_dwelltime = read.csv("../data/2024-07-23_data-dwelltime.csv")
-data_entrytime = read.csv("../data/2024-07-23_data-entrytime.csv")
+data_dwelltime = read.csv("../data/2024-07-24_data-dwelltime.csv")
+data_entrytime = read.csv("../data/2024-07-24_data-entrytime.csv")
 data_entrytime$participant = data_dwelltime$participant
 
 data_entrytime$rt = data_entrytime$first_entry_time_left
