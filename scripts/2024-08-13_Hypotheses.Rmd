@@ -1,5 +1,5 @@
 ---
-title: "2023-09-14_Hypothesis1_MultilevelModel"
+title: "2024-08-14_Hypothesis1_MultilevelModel"
 date: "`r Sys.Date()`"
 output: 
   html_document: 
@@ -84,8 +84,9 @@ The induction of *stress* significantly increases the *maintenance bias* in pati
 # install.packages("gazeR")                 # to preprocess eyetracking data
 # install.packages("janitor")
 # install.packages("multcomp")            # for multiple comparisons
-# install.packages("lmerTest")
-# install.packages("JuliaCall")
+# install.packages("lmerTest")            # for post-hoc tests of LMMs
+# install.packages("JuliaCall")           # for coding in julia
+# install.packages("sjPlot")              # for creating tables on LMM output
 ```
 
 **Load Packages**
@@ -132,7 +133,8 @@ library("janitor")
 library("lme4")
 library("multcomp")
 library("lmerTest")
-library(JuliaCall)
+library("JuliaCall")
+library("sjPlot")
 ```
 
 **Define the Colour Scheme**
@@ -164,8 +166,8 @@ ENV["LMER"] ="lmerTest::lmer"
 ```{r load data}
 # data_dwelltime = read.csv("../data/data_dwelltime_OA.csv")
 # data_entrytime = read.csv("../data/data_entrytime_OA.csv")
-data_dwelltime = read.csv("/Volumes/109-psy-kp-study/044_EYE/05_Analyses/02_Main Project/01_Scripts/03_Hypotheses/project-ocd/data/2024-08-13_data_dwelltime_OA.csv")
-data_entrytime = read.csv("/Volumes/109-psy-kp-study/044_EYE/05_Analyses/02_Main Project/01_Scripts/03_Hypotheses/project-ocd/data/2024-08-13_data_entrytime_OA.csv")
+data_dwelltime = read.csv("/Volumes/109-psy-kp-study/044_EYE/05_Analyses/02_Main Project/01_Scripts/00_Github/project-ocd/data/2024-08-13_data_dwelltime_OA.csv")
+data_entrytime = read.csv("/Volumes/109-psy-kp-study/044_EYE/05_Analyses/02_Main Project/01_Scripts/00_Github/project-ocd/data/2024-08-13_data_entrytime_OA.csv")
 
 data_entrytime$participant = data_dwelltime$participant
 
@@ -302,30 +304,34 @@ julia_command("h1_fm_excl_id_item = fit(LinearMixedModel, h1_fm_excl_id_item, jl
 @Bene: h1_fm_trip_id_item_zc: error happens in Julia: Error in getStart(start, rho$pp) : incorrect number of theta components (!=15) - indicates that model is too complex?
 
 ```{r translate julia models for H1}
+# Model 1: Complex Model
 # h1_fm_complex <- julia_eval("robject(:lmerMod, Tuple([h1_fm_complex,jl_data_dwelltime]));",need_return="R")
-
-# Models 2: Zero Correlation
-h1_fm_trip_zc <- julia_eval("robject(:lmerMod, Tuple([h1_fm_trip_zc,jl_data_dwelltime]));",need_return="R")
-h1_fm_trip_id_zc <- julia_eval("robject(:lmerMod, Tuple([h1_fm_trip_id_zc,jl_data_dwelltime]));",need_return="R")
+# 
+# # Models 2: Zero Correlation
+# h1_fm_trip_zc <- julia_eval("robject(:lmerMod, Tuple([h1_fm_trip_zc,jl_data_dwelltime]));",need_return="R")
+# h1_fm_trip_id_zc <- julia_eval("robject(:lmerMod, Tuple([h1_fm_trip_id_zc,jl_data_dwelltime]));",need_return="R")
 # h1_fm_trip_id_item_zc <- julia_eval("robject(:lmerMod, Tuple([h1_fm_trip_id_item_zc,jl_data_dwelltime]));",need_return="R") # error happens in Julia: Error in getStart(start, rho$pp) : incorrect number of theta components (!=15)
-
-# Models 3: Exclude One Random Effect
-h1_fm_excl_id <- julia_eval("robject(:lmerMod, Tuple([h1_fm_excl_id,jl_data_dwelltime]));",need_return="R")
-h1_fm_excl_triplet <- julia_eval("robject(:lmerMod, Tuple([h1_fm_excl_triplet,jl_data_dwelltime]));",need_return="R")
-h1_fm_excl_item <- julia_eval("robject(:lmerMod, Tuple([h1_fm_excl_item,jl_data_dwelltime]));",need_return="R")
-
-# Models 4: Exclude Two Random Effects
-h1_fm_excl_triplet_id <- julia_eval("robject(:lmerMod, Tuple([h1_fm_excl_triplet_id,jl_data_dwelltime]));",need_return="R")
+# 
+# # Models 3: Exclude One Random Effect
+# h1_fm_excl_id <- julia_eval("robject(:lmerMod, Tuple([h1_fm_excl_id,jl_data_dwelltime]));",need_return="R")
+# h1_fm_excl_triplet <- julia_eval("robject(:lmerMod, Tuple([h1_fm_excl_triplet,jl_data_dwelltime]));",need_return="R")
+# h1_fm_excl_item <- julia_eval("robject(:lmerMod, Tuple([h1_fm_excl_item,jl_data_dwelltime]));",need_return="R")
+# 
+# # Models 4: Exclude Two Random Effects
+# h1_fm_excl_triplet_id <- julia_eval("robject(:lmerMod, Tuple([h1_fm_excl_triplet_id,jl_data_dwelltime]));",need_return="R")
 h1_fm_excl_triplet_item <- julia_eval("robject(:lmerMod, Tuple([h1_fm_excl_triplet_item,jl_data_dwelltime]));",need_return="R")
-h1_fm_excl_id_item <- julia_eval("robject(:lmerMod, Tuple([h1_fm_excl_id_item,jl_data_dwelltime]));",need_return="R")
+# h1_fm_excl_id_item <- julia_eval("robject(:lmerMod, Tuple([h1_fm_excl_id_item,jl_data_dwelltime]));",need_return="R")
 ```
 
 ### Hypothesis 1: Evaluate Best Fitting Model 
 ```{r evaluate best fitting model H1}
 # h1_fm_complex, h1_fm_trip_id_item_zc,
-anova(h1_fm_excl_id, h1_fm_trip_zc, h1_fm_trip_id_zc, h1_fm_excl_triplet, h1_fm_excl_item, h1_fm_excl_triplet_id, h1_fm_excl_triplet_item, h1_fm_excl_id_item)
+# anova(h1_fm_excl_id, h1_fm_trip_zc, h1_fm_trip_id_zc, h1_fm_excl_triplet, h1_fm_excl_item, h1_fm_excl_triplet_id, h1_fm_excl_triplet_item, h1_fm_excl_id_item)
 
 # best: h1_fm_excl_triplet_item
+
+summary(h1_fm_excl_triplet_item)
+tab_model(h1_fm_excl_triplet_item)
 ```
 
 ## Hypothesis 1: Test of Hypotheses With Contrasts
@@ -449,30 +455,33 @@ julia_command("h2a_glm_fm_excl_id_item = fit(MixedModel, h2a_glm_fm_excl_id_item
 ## Hypothesis 2a: Translate Models to R
 @Bene: h2a_glm_fm_complex also runs a long time, same problem as with other complex models. Now also the Models 2 are taking a lot of time translating from julia to R. 
 ```{r translate julia models for H2a}
+# Model 1: Complex Model
 # h2a_glm_fm_complex <- julia_eval("robject(:lmerMod, Tuple([h2a_glm_fm_complex,jl_data_entrytime]));",need_return="R")
-
-# Models 2: Zero Correlation
+# 
+# # Models 2: Zero Correlation
 # h2a_glm_fm_trip_zc <- julia_eval("robject(:lmerMod, Tuple([h2a_glm_fm_trip_zc,jl_data_entrytime]));",need_return="R")
 # h2a_glm_fm_trip_id_zc <- julia_eval("robject(:lmerMod, Tuple([h2a_glm_fm_trip_id_zc,jl_data_entrytime]));",need_return="R")
 # h2a_glm_fm_trip_id_item_zc <- julia_eval("robject(:lmerMod, Tuple([h2a_glm_fm_trip_id_item_zc,jl_data_entrytime]));",need_return="R")
-
-# Models 3: Exclude One Random Effect
-h2a_glm_fm_excl_id <- julia_eval("robject(:lmerMod, Tuple([h2a_glm_fm_excl_id,jl_data_entrytime]));",need_return="R")
-h2a_glm_fm_excl_triplet <- julia_eval("robject(:lmerMod, Tuple([h2a_glm_fm_excl_triplet,jl_data_entrytime]));",need_return="R")
-h2a_glm_fm_excl_item <- julia_eval("robject(:lmerMod, Tuple([h2a_glm_fm_excl_item,jl_data_entrytime]));",need_return="R")
-
-# Models 4: Exclude Two Random Effects
-h2a_glm_fm_excl_triplet_id <- julia_eval("robject(:lmerMod, Tuple([h2a_glm_fm_excl_triplet_id,jl_data_entrytime]));",need_return="R")
+# 
+# # Models 3: Exclude One Random Effect
+# h2a_glm_fm_excl_id <- julia_eval("robject(:lmerMod, Tuple([h2a_glm_fm_excl_id,jl_data_entrytime]));",need_return="R")
+# h2a_glm_fm_excl_triplet <- julia_eval("robject(:lmerMod, Tuple([h2a_glm_fm_excl_triplet,jl_data_entrytime]));",need_return="R")
+# h2a_glm_fm_excl_item <- julia_eval("robject(:lmerMod, Tuple([h2a_glm_fm_excl_item,jl_data_entrytime]));",need_return="R")
+# 
+# # Models 4: Exclude Two Random Effects
+# h2a_glm_fm_excl_triplet_id <- julia_eval("robject(:lmerMod, Tuple([h2a_glm_fm_excl_triplet_id,jl_data_entrytime]));",need_return="R")
 h2a_glm_fm_excl_triplet_item <- julia_eval("robject(:lmerMod, Tuple([h2a_glm_fm_excl_triplet_item,jl_data_entrytime]));",need_return="R")
-h2a_glm_fm_excl_id_item <- julia_eval("robject(:lmerMod, Tuple([h2a_glm_fm_excl_id_item,jl_data_entrytime]));",need_return="R")
+# h2a_glm_fm_excl_id_item <- julia_eval("robject(:lmerMod, Tuple([h2a_glm_fm_excl_id_item,jl_data_entrytime]));",need_return="R")
 ```
 
 ### Evaluate Best Fitting Model 
 ```{r evaluate best fitting model H2a}
 #h2a_glm_fm_complex, h2a_glm_fm_trip_zc, h2a_glm_fm_trip_id_zc, h2a_glm_fm_trip_id_item_zc, 
-anova(h2a_glm_fm_excl_id, h2a_glm_fm_excl_triplet, h2a_glm_fm_excl_item, h2a_glm_fm_excl_triplet_id, h2a_glm_fm_excl_triplet_item, h2a_glm_fm_excl_id_item)
+# anova(h2a_glm_fm_excl_id, h2a_glm_fm_excl_triplet, h2a_glm_fm_excl_item, h2a_glm_fm_excl_triplet_id, h2a_glm_fm_excl_triplet_item, h2a_glm_fm_excl_id_item)
 
 # best: h2a_glm_fm_excl_triplet_item
+summary(h2a_glm_fm_excl_triplet_item)
+tab_model(h2a_glm_fm_excl_triplet_item)
 ```
 
 ## Hypothesis 2a: Test of Choice Hypothesis With Contrasts
@@ -597,31 +606,33 @@ julia_command("h2b_fm_excl_id_item = fit(MixedModel, h2b_fm_excl_id_item, jl_dat
 
 ## Hypothesis 2b: Translate Models to R
 ```{r translate julia models for H2b}
+# Model 1: Complex Model
 # h2b_fm_complex <- julia_eval("robject(:lmerMod, Tuple([h2b_fm_complex,jl_data_entrytime]));",need_return="R")
-
+# 
 # Models 2: Zero Correlation
 # h2b_fm_trip_zc <- julia_eval("robject(:lmerMod, Tuple([h2b_fm_trip_zc,jl_data_entrytime]));",need_return="R")
 # h2b_fm_trip_id_zc <- julia_eval("robject(:lmerMod, Tuple([h2b_fm_trip_id_zc,jl_data_entrytime]));",need_return="R")
 # h2b_fm_trip_id_item_zc <- julia_eval("robject(:lmerMod, Tuple([h2b_fm_trip_id_item_zc,jl_data_entrytime]));",need_return="R")
-
-# Models 3: Exclude One Random Effect
-h2b_fm_excl_id <- julia_eval("robject(:lmerMod, Tuple([h2b_fm_excl_id,jl_data_entrytime]));",need_return="R")
-h2b_fm_excl_triplet <- julia_eval("robject(:lmerMod, Tuple([h2b_fm_excl_triplet,jl_data_entrytime]));",need_return="R")
-h2b_fm_excl_item <- julia_eval("robject(:lmerMod, Tuple([h2b_fm_excl_item,jl_data_entrytime]));",need_return="R")
-
-# Models 4: Exclude Two Random Effects
-h2b_fm_excl_triplet_id <- julia_eval("robject(:lmerMod, Tuple([h2b_fm_excl_triplet_id,jl_data_entrytime]));",need_return="R")
+# 
+# # Models 3: Exclude One Random Effect
+# h2b_fm_excl_id <- julia_eval("robject(:lmerMod, Tuple([h2b_fm_excl_id,jl_data_entrytime]));",need_return="R")
+# h2b_fm_excl_triplet <- julia_eval("robject(:lmerMod, Tuple([h2b_fm_excl_triplet,jl_data_entrytime]));",need_return="R")
+# h2b_fm_excl_item <- julia_eval("robject(:lmerMod, Tuple([h2b_fm_excl_item,jl_data_entrytime]));",need_return="R")
+# 
+# # Models 4: Exclude Two Random Effects
+# h2b_fm_excl_triplet_id <- julia_eval("robject(:lmerMod, Tuple([h2b_fm_excl_triplet_id,jl_data_entrytime]));",need_return="R")
 h2b_fm_excl_triplet_item <- julia_eval("robject(:lmerMod, Tuple([h2b_fm_excl_triplet_item,jl_data_entrytime]));",need_return="R")
-h2b_fm_excl_id_item <- julia_eval("robject(:lmerMod, Tuple([h2b_fm_excl_id_item,jl_data_entrytime]));",need_return="R")
+# h2b_fm_excl_id_item <- julia_eval("robject(:lmerMod, Tuple([h2b_fm_excl_id_item,jl_data_entrytime]));",need_return="R")
 ```
 
 ### Hypothesis 2b: Evaluate Best Fitting Model 
 ```{r evaluate best fitting model H2b}
 #h2b_fm_complex, h2b_fm_trip_zc, h2b_fm_trip_id_zc, h2b_fm_trip_id_item_zc, 
-anova(h2b_fm_excl_id, h2b_fm_excl_triplet, h2b_fm_excl_item, h2b_fm_excl_triplet_id, h2b_fm_excl_triplet_item, h2b_fm_excl_id_item)
+# anova(h2b_fm_excl_id, h2b_fm_excl_triplet, h2b_fm_excl_item, h2b_fm_excl_triplet_id, h2b_fm_excl_triplet_item, h2b_fm_excl_id_item)
 
 # best: h2b_fm_excl_triplet_item
 summary(h2b_fm_excl_triplet_item)
+tab_model(h2b_fm_excl_triplet_item)
 ```
 
 ## Hypothesis 2b: Test of Entry Time Hypothesis With Contrasts
