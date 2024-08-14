@@ -18,30 +18,30 @@ This is the main analysis file of hypothesis 1 of the 044_EYE project on Attenti
 
 ## Hypotheses
 ### 1.) Vigilance Bias: 
-Patients with *OCD* and patients with *spider phobia* attend to *idiosyncratic disorder-relevant material faster* than they do to *neutral* or *negative* material (vigilance bias), as indicated by the entry time to the corresponding region of interest. 
-*Healthy participants* will *not show a bias* towards disorder-relevant stimuli compared to negative or neutral stimuli.
+Patients with **OCD** and patients with **spider phobia** attend to **idiosyncratic disorder-relevant material faster** than they do to **neutral** or **negative** material (vigilance bias), as indicated by the entry time to the corresponding region of interest. 
+**Healthy participants** will **not show a bias** towards disorder-relevant stimuli compared to negative or neutral stimuli.
 
 ### 2.) Maintenance Bias:
-#### a.	
-Patients with *OCD* look at *idiosyncratic OCD-relevant material longer* compared to *neutral* or *negative* material (maintenance bias). 
-#### b.	
-Patients with *OCD* will show a *more pronounced maintenance bias* compared to *healthy* participants and, with regard to *idiosyncratic disorder-specific material*, compared to patients with *spider phobia*.
+**a.**	
+Patients with **OCD** look at **idiosyncratic OCD-relevant material longer** compared to **neutral** or **negative** material (maintenance bias). 
+**b.**	
+Patients with **OCD** will show a **more pronounced maintenance bias** compared to **healthy** participants and, with regard to **idiosyncratic disorder-specific material**, compared to patients with **spider phobia**.
 
 ### 3.) Attentional Control
 #### Subjective Measure
-##### a.	
-In patients with *OCD* and patients with *spider phobia*, there will be a *positive association* between *vigilance bias* and *attentional control* as measured by the self-report questionnaire (Attentional Control Scale). This means the lower the attentional control, the faster patients with OCD or spider phobia will look at OCD-relevant or spider-relevant material, respectively, compared to negative or neutral material.
-##### b.	
-In patients with *OCD*, there will be a *negative association* between the *maintenance bias* and *attentional control* as measured by the self-report questionnaire (Attentional Control Scale). This means the lower the attentional control, the longer patients will look at idiosyncratic OCD-relevant material compared to negative or neutral material.
+**a.**	
+In patients with **OCD** and patients with **spider phobia**, there will be a **positive association** between **vigilance bias** and **attentional control** as measured by the self-report questionnaire (Attentional Control Scale). This means the lower the attentional control, the faster patients with OCD or spider phobia will look at OCD-relevant or spider-relevant material, respectively, compared to negative or neutral material.
+**b.**	
+In patients with **OCD**, there will be a **negative association** between the **maintenance bias** and **attentional control** as measured by the self-report questionnaire (Attentional Control Scale). This means the lower the attentional control, the longer patients will look at idiosyncratic OCD-relevant material compared to negative or neutral material.
 
 ####Objective Measure
-##### c.	
-In patients with *OCD* and patients with *spider phobia*, there will be a positive association between *vigilance bias* and *attentional control* as measured by the objective measure (AX-CPT).
-##### d.	
-In patients with *OCD*, there will be a *negative association* between the *maintenance bias* and *attentional control* as measured by the objective measure (AX-CPT).
+**c.**
+In patients with **OCD** and patients with **spider phobia**, there will be a positive association between **vigilance bias** and **attentional control** as measured by the objective measure (AX-CPT).
+**d.**
+In patients with **OCD**, there will be a **negative association** between the **maintenance bias** and **attentional control** as measured by the objective measure (AX-CPT).
 
 ### 4.) Stress 
-The induction of *stress* significantly increases the *maintenance bias* in patients with *OCD* (state-level). This means that patients with OCD will *look at OCD-relevant material for longer* after the stress induction than before the stress induction.
+The induction of **stress** significantly increases the **maintenance bias** in patients with **OCD** (state-level). This means that patients with OCD will **look at OCD-relevant material for longer** after the stress induction than before the stress induction.
 
 **Install Packages**
 ```{r install packages, message=F, warning=F, include=F}
@@ -215,7 +215,7 @@ data_entrytime$not_looked_at[ix] = "neg"
 ```
 
 # Hypothesis 1: Maintenance Bias 
-*From Complex to Simple Multilevel Models*
+**From Complex to Simple Multilevel Models**
 ## Hypothesis 1: Create Models
 ```{r create julia models for H1}
 #j $assign("form", formula(mlm_dwelltime))
@@ -361,12 +361,14 @@ g = (glht(h1_fm_excl_triplet_item, (c("groupocd:stim_ocd - groupocd = 0", # Pati
 # 2. Satterthwaite is more conservative than Likelihood Ratio Test
 contest(h1_fm_excl_triplet_item,g$linfct,joint=FALSE,ddf="Satterthwaite")
 ```
-*Interpretation*
-TODO
-
+**Interpretation**
+OCD patients do not dwell sig. longer at idiosyncratic OCD-relevant material as compared to neutral pictures. 
+OCD patients do not dwell sig. longer at idiosyncratic OCD-relevant material as compared to negative pictures. 
+OCD patients do not show a sig. more pronounced maintenance bias on idiosyncratic OCD-relevant material as compared to healthy controls on the same material (rated by matched OCD patient).
+OCD patients do show a sig. more pronounced maintenance bias on idiosyncratic OCD-relevant material as compared to spider phobia patients on idiosyncratic spider-phobia material.
 
 # Hypothesis 2: Vigilance Bias 
-*From Complex to Simple Multilevel Models*
+**From Complex to Simple Multilevel Models**
 ## Hypothesis 2a: Choice (wo Entry Time)
 ```{r create julia models for H2a choice}
 # Model 1: Most Complex Model
@@ -487,9 +489,9 @@ tab_model(h2a_glm_fm_excl_triplet_item)
 ## Hypothesis 2a: Test of Choice Hypothesis With Contrasts
 To establish contrast codes that directly test the hypotheses, we first code the hypotheses we want to test. Then, we fit the established effects in the contrast() function. This function allows direct inspection of effects. The p-values are estimated by the Satterthwaite method. The p-values are unadjusted.
 
-Hypothesis: 
-Patients with *OCD* and patients with *spider phobia* attend to *idiosyncratic disorder-relevant material faster* than they do to *neutral* or *negative* material (vigilance bias), as indicated by the entry time to the corresponding region of interest. 
-*Healthy participants* will *not show a bias* towards disorder-relevant stimuli compared to negative or neutral stimuli.
+**Hypothesis:** 
+Patients with **OCD** and patients with **spider phobia** attend to **idiosyncratic disorder-relevant material faster** than they do to **neutral** or **negative** material (vigilance bias), as indicated by the entry time to the corresponding region of interest. 
+**Healthy participants** will **not show a bias** towards disorder-relevant stimuli compared to negative or neutral stimuli.
 
 @Bene: For the GLM this scheme may not work, right? Do we define the contrasts in a different way here? 
 ```{r h2a generalised hypotheses matrices}
@@ -510,7 +512,7 @@ g = (glht(h2a_glm_fm_excl_triplet_item, (c("groupocd:stim_ocd - groupocd = 0", #
 # 2. Satterthwaite is more conservative than Likelihood Ratio Test
 contest(h2a_glm_fm_excl_triplet_item,g$linfct,joint=FALSE,ddf="Satterthwaite")
 ```
-*Interpretation*
+**Interpretation**
 OCD patients are not sig. more likely to first fixate at idiosyncratic OCD-relevant material as compared to neutral pictures. 
 OCD patients are not sig. more likely to first fixate at idiosyncratic OCD-relevant material as compared to negative pictures. 
 Healthy participants are not sig. more likely to first fixate at OCD-relevant stimuli compared to neutral stimuli.
@@ -636,9 +638,9 @@ tab_model(h2b_fm_excl_triplet_item)
 ```
 
 ## Hypothesis 2b: Test of Entry Time Hypothesis With Contrasts
-Hypothesis: 
-Patients with *OCD* and patients with *spider phobia* attend to *idiosyncratic disorder-relevant material faster* than they do to *neutral* or *negative* material (vigilance bias), as indicated by the entry time to the corresponding region of interest. 
-*Healthy participants* will *not show a bias* towards disorder-relevant stimuli compared to negative or neutral stimuli.
+**Hypothesis:**
+Patients with **OCD** and patients with **spider phobia** attend to **idiosyncratic disorder-relevant material faster** than they do to **neutral** or **negative** material (vigilance bias), as indicated by the entry time to the corresponding region of interest. 
+**Healthy participants** will **not show a bias** towards disorder-relevant stimuli compared to negative or neutral stimuli.
 
 @Bene: do we do the same hypothesis test for contrasts here? and if yes, are the contrasts defined correctly?
 ```{r h2b generalised hypotheses matrices}
@@ -659,7 +661,7 @@ g = (glht(h2b_fm_excl_triplet_item, (c("groupocd:looked_atocd - groupocd = 0", #
 # 2. Satterthwaite is more conservative than Likelihood Ratio Test
 contest(h2b_fm_excl_triplet_item,g$linfct,joint=FALSE,ddf="Satterthwaite")
 ```
-*Interpretation*
+**Interpretation**
 OCD patients are not sig. more likely to first fixate at idiosyncratic OCD-relevant material as compared to neutral pictures. 
 OCD patients are not sig. more likely to first fixate at idiosyncratic OCD-relevant material as compared to negative pictures. 
 Healthy participants are not sig. more likely to first fixate at OCD-relevant stimuli compared to neutral stimuli.
