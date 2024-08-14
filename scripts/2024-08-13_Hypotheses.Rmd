@@ -1,0 +1,654 @@
+---
+title: "2023-09-14_Hypothesis1_MultilevelModel"
+date: "`r Sys.Date()`"
+output: 
+  html_document: 
+    theme: cosmo
+    toc: yes
+    toc_float: yes
+---
+
+**Attentional Biases in OCD**  
+**Script Part II / ?**  
+**Date: 24.07.2024**  
+**Version: Version 2**  
+
+# Description
+This is the main analysis file of hypothesis 1 of the 044_EYE project on Attentional Biases in OCD. This script includes the multilevel model that aims to test the main hypotheses. Furthermore, this script contains tests of the assumptions of multilevel models as well as descriptive plots. 
+
+## Hypotheses
+### 1.) Vigilance Bias: 
+Patients with *OCD* and patients with *spider phobia* attend to *idiosyncratic disorder-relevant material faster* than they do to *neutral* or *negative* material (vigilance bias), as indicated by the entry time to the corresponding region of interest. 
+*Healthy participants* will *not show a bias* towards disorder-relevant stimuli compared to negative or neutral stimuli.
+
+### 2.) Maintenance Bias:
+#### a.	
+Patients with *OCD* look at *idiosyncratic OCD-relevant material longer* compared to *neutral* or *negative* material (maintenance bias). 
+#### b.	
+Patients with *OCD* will show a *more pronounced maintenance bias* compared to *healthy* participants and, with regard to *idiosyncratic disorder-specific material*, compared to patients with *spider phobia*.
+
+### 3.) Attentional Control
+#### Subjective Measure
+##### a.	
+In patients with *OCD* and patients with *spider phobia*, there will be a *positive association* between *vigilance bias* and *attentional control* as measured by the self-report questionnaire (Attentional Control Scale). This means the lower the attentional control, the faster patients with OCD or spider phobia will look at OCD-relevant or spider-relevant material, respectively, compared to negative or neutral material.
+##### b.	
+In patients with *OCD*, there will be a *negative association* between the *maintenance bias* and *attentional control* as measured by the self-report questionnaire (Attentional Control Scale). This means the lower the attentional control, the longer patients will look at idiosyncratic OCD-relevant material compared to negative or neutral material.
+
+####Objective Measure
+##### c.	
+In patients with *OCD* and patients with *spider phobia*, there will be a positive association between *vigilance bias* and *attentional control* as measured by the objective measure (AX-CPT).
+##### d.	
+In patients with *OCD*, there will be a *negative association* between the *maintenance bias* and *attentional control* as measured by the objective measure (AX-CPT).
+
+### 4.) Stress 
+The induction of *stress* significantly increases the *maintenance bias* in patients with *OCD* (state-level). This means that patients with OCD will *look at OCD-relevant material for longer* after the stress induction than before the stress induction.
+
+**Install Packages**
+```{r install packages, message=F, warning=F, include=F}
+# install.packages("ROCR")
+# install.packages("lavaan")
+# install.packages("psych")               # for basic calculations
+# install.packages("foreign")             # xxx
+# install.packages("ggplot2")             # for figures
+# install.packages("car")                 # xxx
+# install.packages("corpcor")             # for correlations
+# install.packages("Hmisc")               # xxx
+# install.packages("polycor")             # xxx
+# install.packages("apaTables")           # for exporting tables according to APA style
+# install.packages("QuantPsyc")           # xxx
+# install.packages("effsize")             # xxx
+# install.packages("tidyverse")           # for transforming data
+# install.packages("readxl")              # for loading and exporting datasets
+# install.packages("writexl")             # for loading and exporting datasets
+# install.packages("bannerCommenter")     # for section headers
+# install.packages("reshape2")            # for reshaping datasets
+# install.packages("responsePatterns")    # for check of response patterns
+# install.packages("corrplot")            # for correlation tables
+# install.packages("gsubfn")              # for subsetting strings
+# install.packages("data.table")          # for creating data tables
+# install.packages("RColorBrewer")        # for colours in plots
+# install.packages("pals")                # for colours in plots
+# install.packages("devtools")
+# install.packages("usethis")
+# install.packages("lavaan")              # required to run SEMs
+# install.packages("lavModel")            # required to run SEMs
+# install.packages("ROCR")                # required to create ROC curves
+# install.packages("hdf5r")
+# install.packages("edfReader")           # required to read edf files
+# install.packages("githubinstall")       # required to install packages from github
+# install.packages("eyelinker")           # eyelink specific package
+# install_github("alexander-pastukhov/eyelinkReader")                 # eyelink specific package
+# install_github("aleksandernitka/EyeTracking_Tobii_VAS_IOHUB")  # eyelink specific package
+# install.packages("gaze_analysis.R")     # for gaze analyses
+# install.packages("report")              # to report results of anova
+# install.packages("gazeR")                 # to preprocess eyetracking data
+# install.packages("janitor")
+# install.packages("multcomp")            # for multiple comparisons
+# install.packages("lmerTest")
+# install.packages("JuliaCall")
+```
+
+**Load Packages**
+```{r load packages, message=F, warning=F, include=F}
+library("ROCR")
+library("lavaan")
+library("psych")
+library("foreign")
+library("ggplot2")
+library("car")
+library("corpcor")
+library("Hmisc")
+library("polycor")
+library("apaTables")
+library("QuantPsyc")
+library("effsize")
+library("tidyverse")
+library("readxl")
+library("writexl")
+library("bannerCommenter")
+library("reshape2")
+library("responsePatterns")
+library("corrplot") 
+library("gsubfn")
+library("purrr")
+library("data.table")
+library("RColorBrewer")
+library("pals")
+library("dplyr")
+library("edfReader")
+library("devtools")
+library("usethis")
+library("lavaan")
+library("ROCR")
+library("githubinstall")
+library("hdf5r")
+# library("eyelinkReader")
+library("stats")
+library("ggplot2")
+library("tidyr")
+library("report")
+# library("gazer")
+library("janitor")
+library("lme4")
+library("multcomp")
+library("lmerTest")
+library(JuliaCall)
+```
+
+**Define the Colour Scheme**
+```{r colour scheme, message=F, warning=F, include=F}
+color1 <- "#003C6799"
+color2 <- "#CD534C99"
+color3 <- 'lightgoldenrod1'
+color4 <- "darkseagreen"
+```
+
+# Install Julia
+```{r install julia}
+#install.packages(c("lme4","juliaCall","multcomp","dplyr"))
+library(JuliaCall)
+options(JULIA_HOME = "/Applications/Julia-1.10.app/Contents/Resources/julia/bin") # need to define the path for my Mac to resolve bug
+j = julia_setup(installJulia = TRUE)
+```
+
+## Install Julia Packages
+```{julia install julia packages, echo = F}
+using Pkg
+Pkg.activate(".")
+Pkg.add(["MixedModels","JellyMe4","RCall"])
+  
+ENV["LMER"] ="lmerTest::lmer"
+```
+
+# Load Data 
+```{r load data}
+# data_dwelltime = read.csv("../data/data_dwelltime_OA.csv")
+# data_entrytime = read.csv("../data/data_entrytime_OA.csv")
+data_dwelltime = read.csv("/Volumes/109-psy-kp-study/044_EYE/05_Analyses/02_Main Project/01_Scripts/03_Hypotheses/project-ocd/data/2024-08-13_data_dwelltime_OA.csv")
+data_entrytime = read.csv("/Volumes/109-psy-kp-study/044_EYE/05_Analyses/02_Main Project/01_Scripts/03_Hypotheses/project-ocd/data/2024-08-13_data_entrytime_OA.csv")
+
+data_entrytime$participant = data_dwelltime$participant
+
+data_entrytime$rt = data_entrytime$first_entry_time_left
+
+ix_right = is.na(data_entrytime$first_entry_time_left)
+data_entrytime$rt[ix_right] = data_entrytime$first_entry_time_right[ix_right]
+
+data_entrytime$response = data_entrytime$first_entry_ID_left
+data_entrytime$response[ix_right] = data_entrytime$first_entry_ID_right[ix_right]
+
+# stim effects
+data_entrytime$ocd_left = data_entrytime$stim_ocd == -1
+data_entrytime$ocd_right = data_entrytime$stim_ocd == 1
+
+data_entrytime$pho_left = data_entrytime$stim_pho == -1
+data_entrytime$pho_right = data_entrytime$stim_pho == 1
+
+data_entrytime$neg_left = data_entrytime$stim_neg == -1
+data_entrytime$neg_right = data_entrytime$stim_neg == 1
+
+data_entrytime$looked_right = is.na(data_entrytime$first_entry_ID_left)
+ir = data_entrytime$looked_right
+il = !data_entrytime$looked_right
+data_entrytime$looked_at = 'neutral'
+data_entrytime$not_looked_at = 'neutral'
+
+ix = (il & data_entrytime$pho_left) | (ir & data_entrytime$pho_right)
+data_entrytime$looked_at[ix] = "pho"
+
+ix = (il & data_entrytime$ocd_left) | (ir & data_entrytime$ocd_right)
+data_entrytime$looked_at[ix] = "ocd"
+
+ix = (il & data_entrytime$neg_left) | (ir & data_entrytime$neg_right)
+data_entrytime$looked_at[ix] = "neg"
+
+ix = (ir & data_entrytime$pho_left) | (il & data_entrytime$pho_right)
+data_entrytime$not_looked_at[ix] = "pho"
+
+ix = (ir & data_entrytime$ocd_left) | (il & data_entrytime$ocd_right)
+data_entrytime$not_looked_at[ix] = "ocd"
+
+ix = (ir & data_entrytime$neg_left) | (il & data_entrytime$neg_right)
+data_entrytime$not_looked_at[ix] = "neg"
+```
+
+# Hypothesis 1: Maintenance Bias 
+*From Complex to Simple Multilevel Models*
+## Hypothesis 1: Create Models
+```{r create julia models for H1}
+#j $assign("form", formula(mlm_dwelltime))
+j$assign("jl_data_dwelltime", data_dwelltime)
+j$assign("jl_data_entrytime", data_entrytime)
+julia_command("jl_data_entrytime.response .= jl_data_entrytime.response .-1")
+julia_command("using MixedModels")
+julia_command("using JellyMe4")
+
+# Model 1: Most Complex Model
+julia_command("h1_fm_complex = @formula(dwell_diff ~ group + stim_ocd + stim_pho + stim_neg + group&stim_ocd + group&stim_pho + group&stim_neg +
+              (1 + stim_ocd + stim_pho + stim_neg | triplet)+
+              (1 + stim_ocd + stim_pho + stim_neg | participant) +
+              (1 + group | picture_pair_countingindex))")
+
+# Model 2a: Triplet ZeroCorr
+julia_command("h1_fm_triplet_zerocorr = @formula(dwell_diff ~ group + stim_ocd + stim_pho + stim_neg + group&stim_ocd + group&stim_pho + group&stim_neg + 
+              zerocorr(1 + stim_ocd + stim_pho + stim_neg | triplet)+
+              (1 + stim_ocd + stim_pho + stim_neg | participant) +
+              (1 + group | picture_pair_countingindex))")
+
+# Model 2b: Triplet and Participant ZeroCorr
+julia_command("h1_fm_triplet_id_zerocorr = @formula(dwell_diff ~ group + stim_ocd + stim_pho + stim_neg + group&stim_ocd + group&stim_pho + group&stim_neg + 
+              zerocorr(1 + stim_ocd + stim_pho + stim_neg | triplet)+
+              zerocorr(1 + stim_ocd + stim_pho + stim_neg | participant) +
+              (1 + group | picture_pair_countingindex))")
+
+# Model 2c: Triplet, Participant and Item Effect ZeroCorr
+julia_command("h1_fm_triplet_id_item_zerocorr = @formula(dwell_diff ~ group + stim_ocd + stim_pho + stim_neg + group&stim_ocd + group&stim_pho + group&stim_neg + 
+              zerocorr(1 + stim_ocd + stim_pho + stim_neg | triplet)+
+              zerocorr(1 + stim_ocd + stim_pho + stim_neg | participant) +
+              zerocorr(1 + group | picture_pair_countingindex))")
+
+# Model 3a: Exclude Participant
+julia_command("h1_fm_excl_id = @formula(dwell_diff ~ group + stim_ocd + stim_pho + stim_neg + group&stim_ocd + group&stim_pho + group&stim_neg +
+              (1 + stim_ocd + stim_pho + stim_neg | triplet)+
+              (1 + group | picture_pair_countingindex))")
+
+# Model 3b: Exclude Triplet
+julia_command("h1_fm_excl_triplet = @formula(dwell_diff ~ group + stim_ocd + stim_pho + stim_neg + group&stim_ocd + group&stim_pho + group&stim_neg + 
+              (1 + stim_ocd + stim_pho + stim_neg | participant)+
+              (1 + group | picture_pair_countingindex))")
+
+# Model 3c: Exclude Item
+julia_command("h1_fm_excl_item  = @formula(dwell_diff ~ group + stim_ocd + stim_pho + stim_neg + group&stim_ocd + group&stim_pho + group&stim_neg +
+              (1 + stim_ocd + stim_pho + stim_neg | triplet)+
+              (1 + stim_ocd + stim_pho + stim_neg | participant))")
+
+# Model 4a: Exclude Participant and Triplet
+julia_command("h1_fm_excl_triplet_id = @formula(dwell_diff ~ group + stim_ocd + stim_pho + stim_neg + group&stim_ocd + group&stim_pho + group&stim_neg + 
+              (1 + group | picture_pair_countingindex))")
+
+# Model 4b: Exclude Triplet and Item
+julia_command("h1_fm_excl_triplet_item = @formula(dwell_diff ~ group + stim_ocd + stim_pho + stim_neg + group&stim_ocd + group&stim_pho + group&stim_neg + 
+              (1 + stim_ocd + stim_pho + stim_neg | participant))")
+
+# Model 4c: Exclude Participant and Item
+julia_command("h1_fm_excl_id_item = @formula(dwell_diff ~ group + stim_ocd + stim_pho + stim_neg + group&stim_ocd + group&stim_pho + group&stim_neg + 
+              (1 + stim_ocd + stim_pho + stim_neg | triplet))")
+```
+
+## Hypothesis 1: Run Models 
+```{r run julia models for H1}
+# Model 1
+julia_command("h1_fm_complex = fit(LinearMixedModel, h1_fm_complex, jl_data_dwelltime)")
+
+# Models 2: Zero Correlation
+julia_command("h1_fm_trip_zc = fit(LinearMixedModel, h1_fm_triplet_zerocorr, jl_data_dwelltime)")
+julia_command("h1_fm_trip_id_zc = fit(LinearMixedModel, h1_fm_triplet_id_zerocorr, jl_data_dwelltime)")
+julia_command("h1_fm_trip_id_item_zc = fit(LinearMixedModel, h1_fm_triplet_id_item_zerocorr, jl_data_dwelltime)")
+
+# Models 3: Exclude One Random Effect
+julia_command("h1_fm_excl_id = fit(LinearMixedModel, h1_fm_excl_id, jl_data_dwelltime)")
+julia_command("h1_fm_excl_triplet = fit(LinearMixedModel, h1_fm_excl_triplet, jl_data_dwelltime)")
+julia_command("h1_fm_excl_item = fit(LinearMixedModel, h1_fm_excl_item, jl_data_dwelltime)")
+  
+# Models 4: Exclude Two Random Effects
+julia_command("h1_fm_excl_triplet_id = fit(LinearMixedModel, h1_fm_excl_triplet_id, jl_data_dwelltime)")
+julia_command("h1_fm_excl_triplet_item = fit(LinearMixedModel, h1_fm_excl_triplet_item, jl_data_dwelltime)")
+julia_command("h1_fm_excl_id_item = fit(LinearMixedModel, h1_fm_excl_id_item, jl_data_dwelltime)")
+```
+
+
+## Hypothesis 1: Translate Models to R
+@Bene: h1_fm_complex also runs a long time, same problem as with other complex models
+@Bene: h1_fm_trip_id_item_zc: error happens in Julia: Error in getStart(start, rho$pp) : incorrect number of theta components (!=15) - indicates that model is too complex?
+
+```{r translate julia models for H1}
+# h1_fm_complex <- julia_eval("robject(:lmerMod, Tuple([h1_fm_complex,jl_data_dwelltime]));",need_return="R")
+
+# Models 2: Zero Correlation
+h1_fm_trip_zc <- julia_eval("robject(:lmerMod, Tuple([h1_fm_trip_zc,jl_data_dwelltime]));",need_return="R")
+h1_fm_trip_id_zc <- julia_eval("robject(:lmerMod, Tuple([h1_fm_trip_id_zc,jl_data_dwelltime]));",need_return="R")
+# h1_fm_trip_id_item_zc <- julia_eval("robject(:lmerMod, Tuple([h1_fm_trip_id_item_zc,jl_data_dwelltime]));",need_return="R") # error happens in Julia: Error in getStart(start, rho$pp) : incorrect number of theta components (!=15)
+
+# Models 3: Exclude One Random Effect
+h1_fm_excl_id <- julia_eval("robject(:lmerMod, Tuple([h1_fm_excl_id,jl_data_dwelltime]));",need_return="R")
+h1_fm_excl_triplet <- julia_eval("robject(:lmerMod, Tuple([h1_fm_excl_triplet,jl_data_dwelltime]));",need_return="R")
+h1_fm_excl_item <- julia_eval("robject(:lmerMod, Tuple([h1_fm_excl_item,jl_data_dwelltime]));",need_return="R")
+
+# Models 4: Exclude Two Random Effects
+h1_fm_excl_triplet_id <- julia_eval("robject(:lmerMod, Tuple([h1_fm_excl_triplet_id,jl_data_dwelltime]));",need_return="R")
+h1_fm_excl_triplet_item <- julia_eval("robject(:lmerMod, Tuple([h1_fm_excl_triplet_item,jl_data_dwelltime]));",need_return="R")
+h1_fm_excl_id_item <- julia_eval("robject(:lmerMod, Tuple([h1_fm_excl_id_item,jl_data_dwelltime]));",need_return="R")
+```
+
+### Hypothesis 1: Evaluate Best Fitting Model 
+```{r evaluate best fitting model H1}
+# h1_fm_complex, h1_fm_trip_id_item_zc,
+anova(h1_fm_excl_id, h1_fm_trip_zc, h1_fm_trip_id_zc, h1_fm_excl_triplet, h1_fm_excl_item, h1_fm_excl_triplet_id, h1_fm_excl_triplet_item, h1_fm_excl_id_item)
+
+# best: h1_fm_excl_triplet_item
+```
+
+## Hypothesis 1: Test of Hypotheses With Contrasts
+To establish contrast codes that directly test the hypotheses, we first code the hypotheses we want to test. Then, we fit the established effects in the contrast() function. This function allows direct inspection of effects. The p-values are estimated by the Satterthwaite method. The p-values are unadjusted.
+
+*Maintenance Bias:*
+**a.**
+Patients with *OCD* look at *idiosyncratic OCD-relevant material longer* compared to *neutral* or *negative* material (maintenance bias). 
+**b.**
+Patients with *OCD* will show a *more pronounced maintenance bias* compared to *healthy* participants and, with regard to *idiosyncratic disorder-specific material*, compared to patients with *spider phobia*.
+
+@Bene: are the contrasts defined correctly? 
+@Bene: we are now changing ddf = Kenward-Roger to ddf = Satterthwaite - right?
+```{r generalised hypotheses matrices}
+# Define the model comparisons to test the specific hypothesis of hypothesis 2
+g = (glht(h1_fm_excl_triplet_item, (c("groupocd:stim_ocd - groupocd = 0", # Patients with OCD look at idiosyncratic OCD-relevant material longer compared to neutral material (maintenance bias within group)
+                            "groupocd:stim_ocd - groupocd:stim_neg = 0", # Patients with OCD look at idiosyncratic OCD-relevant material longer compared to negative material (maintenance bias within group)
+                            "groupocd:stim_ocd - stim_ocd = 0", # Patients with OCD will show a more pronounced maintenance bias compared to healthy participants (maintenance bias between groups)
+                            "groupocd:stim_ocd -  groupspider:stim_pho = 0" # Patients with OCD will show a more pronounced maintenance to idiosyncratic disorder-specific material compared to patients with spider phobia (maintenance bias between group)
+))))
+
+# Satterthwaite is a more conservative method than the likelihood ratio test
+# Likelihood ratio tests always compares two models with each other
+# this is easy when the contrast is a treatment effect, but more difficult if we have three variables
+# Deviation from preregistration - but this option is better, as
+# 1. Contrasts are more easily to be implemented with contest(), as we have many different contrasts and three groups that we want to compare within- and between-subjects (LR would only allow two comparisons at a time)
+# 2. Satterthwaite is more conservative than Likelihood Ratio Test
+contest(h1_fm_excl_triplet_item,g$linfct,joint=FALSE,ddf="Satterthwaite")
+```
+
+# Hypothesis 2: Vigilance Bias 
+*From Complex to Simple Multilevel Models*
+## Hypothesis 2a: Choice (wo Entry Time)
+```{r create julia models for H2a choice}
+# Model 1: Most Complex Model
+julia_command("h2a_glm_fm_complex = @formula(response ~ group + stim_ocd + stim_pho + stim_neg + group&stim_ocd + group&stim_pho + group&stim_neg + 
+              (1 + stim_ocd + stim_pho + stim_neg | triplet)+
+              (1 + stim_ocd + stim_pho + stim_neg | participant) +
+              (1 + group | picture_pair_countingindex))")
+
+# Model 2a: Triplet ZeroCorr
+julia_command("h2a_glm_fm_triplet_zerocorr = @formula(response ~ group + stim_ocd + stim_pho + stim_neg + group&stim_ocd + group&stim_pho + group&stim_neg + 
+              zerocorr(1 + stim_ocd + stim_pho + stim_neg | triplet)+
+              (1 + stim_ocd + stim_pho + stim_neg | participant) +
+              (1 + group | picture_pair_countingindex))")
+
+# Model 2b: Triplet and Participant ZeroCorr
+julia_command("h2a_glm_fm_triplet_id_zerocorr = @formula(response ~ group + stim_ocd + stim_pho + stim_neg + group&stim_ocd + group&stim_pho + group&stim_neg + 
+              zerocorr(1 + stim_ocd + stim_pho + stim_neg | triplet)+
+              zerocorr(1 + stim_ocd + stim_pho + stim_neg | participant) +
+              (1 + group | picture_pair_countingindex))")
+
+# Model 2c: Triplet, Participant and Item Effect ZeroCorr
+julia_command("h2a_glm_fm_triplet_id_item_zerocorr = @formula(response ~ group + stim_ocd + stim_pho + stim_neg + group&stim_ocd + group&stim_pho + group&stim_neg + 
+              zerocorr(1 + stim_ocd + stim_pho + stim_neg | triplet)+
+              zerocorr(1 + stim_ocd + stim_pho + stim_neg | participant) +
+              zerocorr(1 + group | picture_pair_countingindex))")
+
+# Model 3a: Exclude Participant
+julia_command("h2a_glm_fm_excl_id = @formula(response ~ group + stim_ocd + stim_pho + stim_neg + group&stim_ocd + group&stim_pho + group&stim_neg + 
+              (1 + stim_ocd + stim_pho + stim_neg | triplet)+
+              (1 + group | picture_pair_countingindex))")
+
+# Model 3b: Exclude Triplet
+julia_command("h2a_glm_fm_excl_triplet = @formula(response ~ group + stim_ocd + stim_pho + stim_neg + group&stim_ocd + group&stim_pho + group&stim_neg + 
+              (1 + stim_ocd + stim_pho + stim_neg | participant)+
+              (1 + group | picture_pair_countingindex))")
+
+# Model 3c: Exclude Item
+julia_command("h2a_glm_fm_excl_item  = @formula(response ~ group + stim_ocd + stim_pho + stim_neg + group&stim_ocd + group&stim_pho + group&stim_neg +
+              (1 + stim_ocd + stim_pho + stim_neg | triplet)+
+              (1 + stim_ocd + stim_pho + stim_neg | participant))")
+
+# Model 4a: Exclude Participant and Triplet
+julia_command("h2a_glm_fm_excl_triplet_id = @formula(response ~ group + stim_ocd + stim_pho + stim_neg + group&stim_ocd + group&stim_pho + group&stim_neg + 
+              (1 + group | picture_pair_countingindex))")
+
+# Model 4b: Exclude Triplet and Item
+julia_command("h2a_glm_fm_excl_triplet_item = @formula(response ~ group + stim_ocd + stim_pho + stim_neg + group&stim_ocd + group&stim_pho + group&stim_neg + 
+              (1 + stim_ocd + stim_pho + stim_neg | participant))")
+
+# Model 4c: Exclude Participant and Item
+julia_command("h2a_glm_fm_excl_id_item = @formula(response ~ group + stim_ocd + stim_pho + stim_neg + group&stim_ocd + group&stim_pho + group&stim_neg + 
+              (1 + stim_ocd + stim_pho + stim_neg | triplet))")
+```
+
+## Hypothesis 2a: Run Models 
+@Bene: we still need to define the contrasts for the entry time analyses, right? Is this done in the same way as for the dwelltime analyses?
+```{julia define contrasts entrytime, include=FALSE}
+using RCall
+using MixedModels
+using JellyMe4
+jl_data_entrytime = @rget data_entrytime
+
+c_entrytime = Dict(:group=>DummyCoding(;base="healthy"),:looked_right=>EffectsCoding(),:looked_at=>DummyCoding(;base="neutral"))
+```
+
+```{r run julia models for H2a}
+# Model 1
+julia_command("h2a_glm_fm_complex = fit(MixedModel, h2a_glm_fm_complex, jl_data_entrytime;contrasts=c_entrytime)")
+
+# Models 2: Zero Correlation
+julia_command("h2a_glm_fm_trip_zc = fit(MixedModel, h2a_glm_fm_triplet_zerocorr, jl_data_entrytime;contrasts=c_entrytime)")
+julia_command("h2a_glm_fm_trip_id_zc = fit(MixedModel, h2a_glm_fm_triplet_id_zerocorr, jl_data_entrytime;contrasts=c_entrytime)")
+julia_command("h2a_glm_fm_trip_id_item_zc = fit(MixedModel, h2a_glm_fm_triplet_id_item_zerocorr, jl_data_entrytime;contrasts=c_entrytime)")
+
+# Models 3: Exclude One Random Effect
+julia_command("h2a_glm_fm_excl_id = fit(MixedModel, h2a_glm_fm_excl_id, jl_data_entrytime;contrasts=c_entrytime)")
+julia_command("h2a_glm_fm_excl_triplet = fit(MixedModel, h2a_glm_fm_excl_triplet, jl_data_entrytime;contrasts=c_entrytime)")
+julia_command("h2a_glm_fm_excl_item = fit(MixedModel, h2a_glm_fm_excl_item, jl_data_entrytime;contrasts=c_entrytime)")
+
+# Models 4: Exclude Two Random Effects
+julia_command("h2a_glm_fm_excl_triplet_id = fit(MixedModel, h2a_glm_fm_excl_triplet_id, jl_data_entrytime;contrasts=c_entrytime)")
+julia_command("h2a_glm_fm_excl_triplet_item = fit(MixedModel, h2a_glm_fm_excl_triplet_item, jl_data_entrytime;contrasts=c_entrytime)")
+julia_command("h2a_glm_fm_excl_id_item = fit(MixedModel, h2a_glm_fm_excl_id_item, jl_data_entrytime;contrasts=c_entrytime)")
+```
+
+## Hypothesis 2a: Translate Models to R
+@Bene: h2a_glm_fm_complex also runs a long time, same problem as with other complex models. Now also the Models 2 are taking a lot of time translating from julia to R. 
+```{r translate julia models for H2a}
+# h2a_glm_fm_complex <- julia_eval("robject(:lmerMod, Tuple([h2a_glm_fm_complex,jl_data_entrytime]));",need_return="R")
+
+# Models 2: Zero Correlation
+# h2a_glm_fm_trip_zc <- julia_eval("robject(:lmerMod, Tuple([h2a_glm_fm_trip_zc,jl_data_entrytime]));",need_return="R")
+# h2a_glm_fm_trip_id_zc <- julia_eval("robject(:lmerMod, Tuple([h2a_glm_fm_trip_id_zc,jl_data_entrytime]));",need_return="R")
+# h2a_glm_fm_trip_id_item_zc <- julia_eval("robject(:lmerMod, Tuple([h2a_glm_fm_trip_id_item_zc,jl_data_entrytime]));",need_return="R")
+
+# Models 3: Exclude One Random Effect
+h2a_glm_fm_excl_id <- julia_eval("robject(:lmerMod, Tuple([h2a_glm_fm_excl_id,jl_data_entrytime]));",need_return="R")
+h2a_glm_fm_excl_triplet <- julia_eval("robject(:lmerMod, Tuple([h2a_glm_fm_excl_triplet,jl_data_entrytime]));",need_return="R")
+h2a_glm_fm_excl_item <- julia_eval("robject(:lmerMod, Tuple([h2a_glm_fm_excl_item,jl_data_entrytime]));",need_return="R")
+
+# Models 4: Exclude Two Random Effects
+h2a_glm_fm_excl_triplet_id <- julia_eval("robject(:lmerMod, Tuple([h2a_glm_fm_excl_triplet_id,jl_data_entrytime]));",need_return="R")
+h2a_glm_fm_excl_triplet_item <- julia_eval("robject(:lmerMod, Tuple([h2a_glm_fm_excl_triplet_item,jl_data_entrytime]));",need_return="R")
+h2a_glm_fm_excl_id_item <- julia_eval("robject(:lmerMod, Tuple([h2a_glm_fm_excl_id_item,jl_data_entrytime]));",need_return="R")
+```
+
+### Evaluate Best Fitting Model 
+```{r evaluate best fitting model H2a}
+#h2a_glm_fm_complex, h2a_glm_fm_trip_zc, h2a_glm_fm_trip_id_zc, h2a_glm_fm_trip_id_item_zc, 
+anova(h2a_glm_fm_excl_id, h2a_glm_fm_excl_triplet, h2a_glm_fm_excl_item, h2a_glm_fm_excl_triplet_id, h2a_glm_fm_excl_triplet_item, h2a_glm_fm_excl_id_item)
+
+# best: h2a_glm_fm_excl_triplet_item
+```
+
+## Hypothesis 2a: Test of Choice Hypothesis With Contrasts
+To establish contrast codes that directly test the hypotheses, we first code the hypotheses we want to test. Then, we fit the established effects in the contrast() function. This function allows direct inspection of effects. The p-values are estimated by the Satterthwaite method. The p-values are unadjusted.
+
+Hypothesis: 
+Patients with *OCD* and patients with *spider phobia* attend to *idiosyncratic disorder-relevant material faster* than they do to *neutral* or *negative* material (vigilance bias), as indicated by the entry time to the corresponding region of interest. 
+*Healthy participants* will *not show a bias* towards disorder-relevant stimuli compared to negative or neutral stimuli.
+
+@Bene: For the GLM this scheme may not work, right? Do we define the contrasts in a different way here? 
+```{r h2a generalised hypotheses matrices}
+# Define the model comparisons to test the specific hypothesis of hypothesis 2
+g = (glht(h2a_glm_fm_excl_triplet_item, (c("groupocd:stim_ocd - groupocd = 0", # Patients with OCD are more likely to first fixate on idiosyncratic OCD-relevant material as compared to neutral material (choice bias within group)
+                            "groupocd:stim_ocd - groupocd:stim_neg = 0", # Patients with OCD are more likely to first fixate on OCD-relevant material as compared to negative material (choice bias within group)
+                            "stim_ocd = 0", # Healthy participants will not show a bias towards OCD-relevant stimuli compared to neutral stimuli (choice bias within healthy group)
+                            "stim_ocd - stim_neg= 0", # Healthy participants will not show a bias towards OCD-relevant stimuli compared to neutral stimuli (choice bias within healthy group)
+                              "stim_pho = 0", # Healthy participants will not show a bias towards spider-relevant stimuli compared to neutral stimuli (choice bias within healthy group)
+                              "stim_pho - stim_neg= 0" # Healthy participants will not show a bias towards spider-relevant stimuli compared to neutral stimuli (choice bias within healthy group)
+))))
+
+# Satterthwaite is a more conservative method than the likelihood ratio test
+# Likelihood ratio tests always compares two models with each other
+# this is easy when the contrast is a treatment effect, but more difficult if we have three variables
+# Deviation from preregistration - but this option is better, as
+# 1. Contrasts are more easily to be implemented with contest(), as we have many different contrasts and three groups that we want to compare within- and between-subjects (LR would only allow two comparisons at a time)
+# 2. Satterthwaite is more conservative than Likelihood Ratio Test
+contest(h2a_glm_fm_excl_triplet_item,g$linfct,joint=FALSE,ddf="Satterthwaite")
+```
+*Interpretation*
+OCD patients are not sig. more likely to first fixate at idiosyncratic OCD-relevant material as compared to neutral pictures. 
+OCD patients are not sig. more likely to first fixate at idiosyncratic OCD-relevant material as compared to negative pictures. 
+Healthy participants are not sig. more likely to first fixate at OCD-relevant stimuli compared to neutral stimuli.
+Healthy participants are not sig. more likely to first fixate at OCD-relevant stimuli compared to negative stimuli.
+Healthy participants are sig. less likely to first fixate spider-relevant stimuli compared to neutral stimuli.
+Healthy participants are sig. less likely to first fixate spider-relevant stimuli compared to negative stimuli.
+
+## Hypothesis 2b: Entry Time
+```{r create julia models for H2b reaction time}
+# Model 1: Most Complex Model
+julia_command("h2b_fm_complex = @formula(rt ~ group*looked_at + looked_right*group+ 
+              (1 + looked_at + looked_right | triplet) +
+              (1 + looked_at + looked_right | participant) +
+              (1 + group | picture_pair_countingindex))")
+
+
+# Model 2a: Triplet ZeroCorr
+julia_command("h2b_fm_triplet_zerocorr = @formula(rt ~ group*looked_at + looked_right*group+
+              zerocorr((1 + looked_at + looked_right | triplet)) +
+              (1 + looked_at + looked_right | participant) +
+              (1 + group | picture_pair_countingindex))")
+
+# Model 2b: Triplet and Participant ZeroCorr
+julia_command("h2b_fm_triplet_id_zerocorr = @formula(rt ~ group*looked_at + looked_right*group+
+              zerocorr((1 + looked_at + looked_right | triplet)) +
+              zerocorr((1 + looked_at + looked_right | participant)) +
+              (1 + group | picture_pair_countingindex))")
+
+# Model 2c: Triplet, Participant and Item Effect ZeroCorr
+julia_command("h2b_fm_triplet_id_item_zerocorr = @formula(rt ~ group*looked_at + looked_right*group+ 
+              zerocorr((1 + looked_at + looked_right | triplet)) +
+              zerocorr((1 + looked_at + looked_right | participant)) +
+              zerocorr((1 + group | picture_pair_countingindex)))")
+
+# Model 3a: Exclude Participant
+julia_command("h2b_fm_excl_id = @formula(rt ~ group*looked_at + looked_right*group+ 
+              (1 + looked_at + looked_right | triplet) +
+              (1 + group | picture_pair_countingindex))")
+
+# Model 3b: Exclude Triplet
+julia_command("h2b_fm_excl_triplet = @formula(rt ~ group*looked_at + looked_right*group+ 
+              (1 + looked_at + looked_right | participant) +
+              (1 + group | picture_pair_countingindex))")
+
+# Model 3c: Exclude Item
+julia_command("h2b_fm_excl_item = @formula(rt ~ group*looked_at + looked_right*group+ 
+              (1 + looked_at + looked_right | triplet) +
+              (1 + looked_at + looked_right | participant))")
+
+# Model 4a: Exclude Participant and Triplet
+julia_command("h2b_fm_excl_triplet_id = @formula(rt ~ group*looked_at + looked_right*group+
+              (1 + group | picture_pair_countingindex))")
+
+# Model 4b: Exclude Triplet and Item
+julia_command("h2b_fm_excl_triplet_item = @formula(rt ~ group*looked_at + looked_right*group+ 
+              (1 + looked_at + looked_right | participant))")
+
+# Model 4c: Exclude Participant and Item
+julia_command("h2b_fm_excl_id_item = @formula(rt ~ group*looked_at + looked_right*group+
+              (1 + looked_at + looked_right | triplet))")
+```
+
+## Hypothesis 2b: Run Models
+```{julia define contrasts reaction time, include=FALSE}
+using RCall
+using MixedModels
+using JellyMe4
+jl_data_entrytime = @rget data_entrytime
+
+c_rt = Dict(:group=>DummyCoding(;base="healthy"),:looked_right=>EffectsCoding(),:looked_at=>DummyCoding(;base="neutral"))
+```
+
+
+```{r run julia models for H2b}
+# Model 1
+julia_command("h2b_fm_complex = fit(MixedModel, h2b_fm_complex, jl_data_entrytime,contrasts=c_rt)")
+
+# Models 2: Zero Correlation
+julia_command("h2b_fm_trip_zc = fit(MixedModel, h2b_fm_triplet_zerocorr, jl_data_entrytime,contrasts=c_rt)")
+julia_command("h2b_fm_trip_id_zc = fit(MixedModel, h2b_fm_triplet_id_zerocorr, jl_data_entrytime;contrasts=c_rt)")
+julia_command("h2b_fm_trip_id_item_zc = fit(MixedModel, h2b_fm_triplet_id_item_zerocorr, jl_data_entrytime;contrasts=c_rt)")
+
+# Models 3: Exclude One Random Effect
+julia_command("h2b_fm_excl_id = fit(MixedModel, h2b_fm_excl_id, jl_data_entrytime;contrasts=c_rt)")
+julia_command("h2b_fm_excl_triplet = fit(MixedModel, h2b_fm_excl_triplet, jl_data_entrytime;contrasts=c_rt)")
+julia_command("h2b_fm_excl_item = fit(MixedModel, h2b_fm_excl_item, jl_data_entrytime;contrasts=c_rt)")
+  
+# Models 4: Exclude Two Random Effects
+julia_command("h2b_fm_excl_triplet_id = fit(MixedModel, h2b_fm_excl_triplet_id, jl_data_entrytime;contrasts=c_rt)")
+julia_command("h2b_fm_excl_triplet_item = fit(MixedModel, h2b_fm_excl_triplet_item, jl_data_entrytime;contrasts=c_rt)")
+julia_command("h2b_fm_excl_id_item = fit(MixedModel, h2b_fm_excl_id_item, jl_data_entrytime;contrasts=c_rt)")
+```
+
+## Hypothesis 2b: Translate Models to R
+```{r translate julia models for H2b}
+# h2b_fm_complex <- julia_eval("robject(:lmerMod, Tuple([h2b_fm_complex,jl_data_entrytime]));",need_return="R")
+
+# Models 2: Zero Correlation
+# h2b_fm_trip_zc <- julia_eval("robject(:lmerMod, Tuple([h2b_fm_trip_zc,jl_data_entrytime]));",need_return="R")
+# h2b_fm_trip_id_zc <- julia_eval("robject(:lmerMod, Tuple([h2b_fm_trip_id_zc,jl_data_entrytime]));",need_return="R")
+# h2b_fm_trip_id_item_zc <- julia_eval("robject(:lmerMod, Tuple([h2b_fm_trip_id_item_zc,jl_data_entrytime]));",need_return="R")
+
+# Models 3: Exclude One Random Effect
+h2b_fm_excl_id <- julia_eval("robject(:lmerMod, Tuple([h2b_fm_excl_id,jl_data_entrytime]));",need_return="R")
+h2b_fm_excl_triplet <- julia_eval("robject(:lmerMod, Tuple([h2b_fm_excl_triplet,jl_data_entrytime]));",need_return="R")
+h2b_fm_excl_item <- julia_eval("robject(:lmerMod, Tuple([h2b_fm_excl_item,jl_data_entrytime]));",need_return="R")
+
+# Models 4: Exclude Two Random Effects
+h2b_fm_excl_triplet_id <- julia_eval("robject(:lmerMod, Tuple([h2b_fm_excl_triplet_id,jl_data_entrytime]));",need_return="R")
+h2b_fm_excl_triplet_item <- julia_eval("robject(:lmerMod, Tuple([h2b_fm_excl_triplet_item,jl_data_entrytime]));",need_return="R")
+h2b_fm_excl_id_item <- julia_eval("robject(:lmerMod, Tuple([h2b_fm_excl_id_item,jl_data_entrytime]));",need_return="R")
+```
+
+### Hypothesis 2b: Evaluate Best Fitting Model 
+```{r evaluate best fitting model H2b}
+#h2b_fm_complex, h2b_fm_trip_zc, h2b_fm_trip_id_zc, h2b_fm_trip_id_item_zc, 
+anova(h2b_fm_excl_id, h2b_fm_excl_triplet, h2b_fm_excl_item, h2b_fm_excl_triplet_id, h2b_fm_excl_triplet_item, h2b_fm_excl_id_item)
+
+# best: h2b_fm_excl_triplet_item
+summary(h2b_fm_excl_triplet_item)
+```
+
+## Hypothesis 2b: Test of Entry Time Hypothesis With Contrasts
+Hypothesis: 
+Patients with *OCD* and patients with *spider phobia* attend to *idiosyncratic disorder-relevant material faster* than they do to *neutral* or *negative* material (vigilance bias), as indicated by the entry time to the corresponding region of interest. 
+*Healthy participants* will *not show a bias* towards disorder-relevant stimuli compared to negative or neutral stimuli.
+
+@Bene: do we do the same hypothesis test for contrasts here? and if yes, are the contrasts defined correctly?
+```{r h2b generalised hypotheses matrices}
+# Define the model comparisons to test the specific hypothesis of hypothesis 2
+g = (glht(h2b_fm_excl_triplet_item, (c("groupocd:looked_atocd - groupocd = 0", # Patients with OCD are more likely to first fixate on idiosyncratic OCD-relevant material as compared to neutral material (choice bias within group)
+                            "groupocd:looked_atocd - groupocd:looked_atneg = 0", # Patients with OCD are more likely to first fixate on OCD-relevant material as compared to negative material (choice bias within group)
+                            "looked_atocd = 0", # Healthy participants will not show a bias towards OCD-relevant stimuli compared to neutral stimuli (choice bias within healthy group)
+                            "looked_atocd - looked_atneg = 0", # Healthy participants will not show a bias towards OCD-relevant stimuli compared to neutral stimuli (choice bias within healthy group)
+                              "looked_atpho = 0", # Healthy participants will not show a bias towards spider-relevant stimuli compared to neutral stimuli (choice bias within healthy group)
+                              "looked_atpho - looked_atneg = 0" # Healthy participants will not show a bias towards spider-relevant stimuli compared to neutral stimuli (choice bias within healthy group)
+))))
+
+# Satterthwaite is a more conservative method than the likelihood ratio test
+# Likelihood ratio tests always compares two models with each other
+# this is easy when the contrast is a treatment effect, but more difficult if we have three variables
+# Deviation from preregistration - but this option is better, as
+# 1. Contrasts are more easily to be implemented with contest(), as we have many different contrasts and three groups that we want to compare within- and between-subjects (LR would only allow two comparisons at a time)
+# 2. Satterthwaite is more conservative than Likelihood Ratio Test
+contest(h2b_fm_excl_triplet_item,g$linfct,joint=FALSE,ddf="Satterthwaite")
+```
+*Interpretation*
+OCD patients are not sig. more likely to first fixate at idiosyncratic OCD-relevant material as compared to neutral pictures. 
+OCD patients are not sig. more likely to first fixate at idiosyncratic OCD-relevant material as compared to negative pictures. 
+Healthy participants are not sig. more likely to first fixate at OCD-relevant stimuli compared to neutral stimuli.
+Healthy participants are not sig. more likely to first fixate at OCD-relevant stimuli compared to negative stimuli.
+Healthy participants are not sig. more likely to first fixate spider-relevant stimuli compared to neutral stimuli.
+Healthy participants are not sig. more likely to first fixate spider-relevant stimuli compared to negative stimuli.
