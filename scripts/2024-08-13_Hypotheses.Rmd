@@ -355,6 +355,9 @@ g = (glht(h1_fm_excl_triplet_item, (c("groupocd:stim_ocd - groupocd = 0", # Pati
 # 2. Satterthwaite is more conservative than Likelihood Ratio Test
 contest(h1_fm_excl_triplet_item,g$linfct,joint=FALSE,ddf="Satterthwaite")
 ```
+*Interpretation*
+TODO
+
 
 # Hypothesis 2: Vigilance Bias 
 *From Complex to Simple Multilevel Models*
