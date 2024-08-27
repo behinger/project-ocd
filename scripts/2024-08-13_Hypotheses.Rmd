@@ -499,9 +499,9 @@ Patients with **OCD** and patients with **spider phobia** attend to **idiosyncra
 g = (glht(h2a_glm_fm_excl_triplet_item, (c("groupocd:stim_ocd - groupocd = 0", # Patients with OCD are more likely to first fixate on idiosyncratic OCD-relevant material as compared to neutral material (choice bias within group)
                             "groupocd:stim_ocd - groupocd:stim_neg = 0", # Patients with OCD are more likely to first fixate on OCD-relevant material as compared to negative material (choice bias within group)
                             "stim_ocd = 0", # Healthy participants will not show a bias towards OCD-relevant stimuli compared to neutral stimuli (choice bias within healthy group)
-                            "stim_ocd - stim_neg= 0", # Healthy participants will not show a bias towards OCD-relevant stimuli compared to neutral stimuli (choice bias within healthy group)
+                            "stim_ocd - stim_neg= 0", # Healthy participants will not show a bias towards OCD-relevant stimuli compared to negative stimuli (choice bias within healthy group)
                               "stim_pho = 0", # Healthy participants will not show a bias towards spider-relevant stimuli compared to neutral stimuli (choice bias within healthy group)
-                              "stim_pho - stim_neg= 0" # Healthy participants will not show a bias towards spider-relevant stimuli compared to neutral stimuli (choice bias within healthy group)
+                              "stim_pho - stim_neg= 0" # Healthy participants will not show a bias towards spider-relevant stimuli compared to negative stimuli (choice bias within healthy group)
 ))))
 
 # Satterthwaite is a more conservative method than the likelihood ratio test
@@ -645,12 +645,12 @@ Patients with **OCD** and patients with **spider phobia** attend to **idiosyncra
 @Bene: do we do the same hypothesis test for contrasts here? and if yes, are the contrasts defined correctly?
 ```{r h2b generalised hypotheses matrices}
 # Define the model comparisons to test the specific hypothesis of hypothesis 2
-g = (glht(h2b_fm_excl_triplet_item, (c("groupocd:looked_atocd - groupocd = 0", # Patients with OCD are more likely to first fixate on idiosyncratic OCD-relevant material as compared to neutral material (choice bias within group)
-                            "groupocd:looked_atocd - groupocd:looked_atneg = 0", # Patients with OCD are more likely to first fixate on OCD-relevant material as compared to negative material (choice bias within group)
-                            "looked_atocd = 0", # Healthy participants will not show a bias towards OCD-relevant stimuli compared to neutral stimuli (choice bias within healthy group)
-                            "looked_atocd - looked_atneg = 0", # Healthy participants will not show a bias towards OCD-relevant stimuli compared to neutral stimuli (choice bias within healthy group)
-                              "looked_atpho = 0", # Healthy participants will not show a bias towards spider-relevant stimuli compared to neutral stimuli (choice bias within healthy group)
-                              "looked_atpho - looked_atneg = 0" # Healthy participants will not show a bias towards spider-relevant stimuli compared to neutral stimuli (choice bias within healthy group)
+g = (glht(h2b_fm_excl_triplet_item, (c("groupocd:looked_atocd - groupocd = 0", # Patients with OCD fixate faster on idiosyncratic OCD-relevant material as compared to neutral material (entry time bias within group)
+                            "groupocd:looked_atocd - groupocd:looked_atneg = 0", # Patients with OCD fixate faster on OCD-relevant material as compared to negative material (entry time bias within group)
+                            "looked_atocd = 0", # Healthy participants will not show a bias towards OCD-relevant stimuli compared to neutral stimuli (entry time bias within healthy group)
+                            "looked_atocd - looked_atneg = 0", # Healthy participants will not show a bias towards OCD-relevant stimuli compared to neutral stimuli (entry time bias within healthy group)
+                              "looked_atpho = 0", # Healthy participants will not show a bias towards spider-relevant stimuli compared to neutral stimuli (entry time bias within healthy group)
+                              "looked_atpho - looked_atneg = 0" # Healthy participants will not show a bias towards spider-relevant stimuli compared to neutral stimuli (entry time bias within healthy group)
 ))))
 
 # Satterthwaite is a more conservative method than the likelihood ratio test

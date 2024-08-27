@@ -2,14 +2,8 @@
 title: "2024-08-14_Moderation_Analyses"
 author: "Celina Liane Müller"
 date: "`r Sys.Date()`"
-output: html_document
----
-
----
-title: "2024-08-14_Hypothesis1_MultilevelModel"
-date: "`r Sys.Date()`"
 output: 
-  html_document: 
+  html_document:
     theme: cosmo
     toc: yes
     toc_float: yes
@@ -38,6 +32,17 @@ In patients with **OCD**, there will be a **negative association** between the *
 
 ### 4.) Stress 
 The induction of **stress** significantly increases the **maintenance bias** in patients with **OCD** (state-level). This means that patients with OCD will **look at OCD-relevant material for longer** after the stress induction than before the stress induction.
+
+**Define the Colour Scheme**
+```{r message=F, warning=F, include=F}
+color1 <- "#003C6799"
+color2 <- "#CD534C99"
+color3 <- 'lightgoldenrod1'
+color4 <- "darkseagreen"
+
+green_shades <- c("darkgreen", "forestgreen", "darkseagreen", "chartreuse3")
+```
+
 
 **Install Packages**
 ```{r install packages, message=F, warning=F, include=F}
@@ -83,62 +88,49 @@ The induction of **stress** significantly increases the **maintenance bias** in 
 # install.packages("lmerTest")            # for post-hoc tests of LMMs
 # install.packages("JuliaCall")           # for coding in julia
 # install.packages("sjPlot")              # for creating tables on LMM output
+# install.packages("rstatix")             # for correlation matrices withe exact p-values
+# install.packages("DT)                   # for datatables in r-markdown
 ```
 
 **Load Packages**
 ```{r load packages, message=F, warning=F, include=F}
-library("ROCR")
 library("lavaan")
 library("psych")
-library("foreign")
 library("ggplot2")
-library("car")
-library("corpcor")
-library("Hmisc")
-library("polycor")
 library("apaTables")
-library("QuantPsyc")
-library("effsize")
 library("tidyverse")
 library("readxl")
 library("writexl")
-library("bannerCommenter")
-library("reshape2")
-library("responsePatterns")
-library("corrplot") 
-library("gsubfn")
-library("purrr")
 library("data.table")
-library("RColorBrewer")
-library("pals")
 library("dplyr")
-library("edfReader")
-library("devtools")
-library("usethis")
-library("lavaan")
-library("ROCR")
-library("githubinstall")
-library("hdf5r")
-# library("eyelinkReader")
 library("stats")
 library("ggplot2")
 library("tidyr")
-library("report")
-# library("gazer")
 library("janitor")
 library("lme4")
 library("multcomp")
 library("lmerTest")
 library("JuliaCall")
 library("sjPlot")
+library("rstatix")
+library("DT")
 ```
 
-**Define the Colour Scheme**
-```{r colour scheme, message=F, warning=F, include=F}
-color1 <- "#003C6799"
-color2 <- "#CD534C99"
-color3 <- 'lightgoldenrod1'
-color4 <- "darkseagreen"
+# Install Julia
+```{r install julia}
+#install.packages(c("lme4","juliaCall","multcomp","dplyr"))
+library(JuliaCall)
+options(JULIA_HOME = "/Applications/Julia-1.10.app/Contents/Resources/julia/bin") # need to define the path for my Mac to resolve bug
+j = julia_setup(installJulia = TRUE)
+```
+
+## Install Julia Packages
+```{julia install julia packages, echo = F}
+using Pkg
+Pkg.activate(".")
+Pkg.add(["MixedModels","JellyMe4","RCall"])
+  
+ENV["LMER"] ="lmerTest::lmer"
 ```
 
 # Load Data 
@@ -147,8 +139,51 @@ color4 <- "darkseagreen"
 # data_entrytime = read.csv("../data/data_entrytime_OA.csv")
 data_dwelltime = read.csv("/Volumes/109-psy-kp-study/044_EYE/05_Analyses/02_Main Project/01_Scripts/00_Github/project-ocd/data/2024-08-13_data_dwelltime_OA.csv")
 data_entrytime = read.csv("/Volumes/109-psy-kp-study/044_EYE/05_Analyses/02_Main Project/01_Scripts/00_Github/project-ocd/data/2024-08-13_data_entrytime_OA.csv")
-```
 
+data_entrytime$participant = data_dwelltime$participant
+
+data_entrytime$rt = data_entrytime$first_entry_time_left
+
+ix_right = is.na(data_entrytime$first_entry_time_left)
+data_entrytime$rt[ix_right] = data_entrytime$first_entry_time_right[ix_right]
+
+data_entrytime$response = data_entrytime$first_entry_ID_left
+data_entrytime$response[ix_right] = data_entrytime$first_entry_ID_right[ix_right]
+
+# stim effects
+data_entrytime$ocd_left = data_entrytime$stim_ocd == -1
+data_entrytime$ocd_right = data_entrytime$stim_ocd == 1
+
+data_entrytime$pho_left = data_entrytime$stim_pho == -1
+data_entrytime$pho_right = data_entrytime$stim_pho == 1
+
+data_entrytime$neg_left = data_entrytime$stim_neg == -1
+data_entrytime$neg_right = data_entrytime$stim_neg == 1
+
+data_entrytime$looked_right = is.na(data_entrytime$first_entry_ID_left)
+ir = data_entrytime$looked_right
+il = !data_entrytime$looked_right
+data_entrytime$looked_at = 'neutral'
+data_entrytime$not_looked_at = 'neutral'
+
+ix = (il & data_entrytime$pho_left) | (ir & data_entrytime$pho_right)
+data_entrytime$looked_at[ix] = "pho"
+
+ix = (il & data_entrytime$ocd_left) | (ir & data_entrytime$ocd_right)
+data_entrytime$looked_at[ix] = "ocd"
+
+ix = (il & data_entrytime$neg_left) | (ir & data_entrytime$neg_right)
+data_entrytime$looked_at[ix] = "neg"
+
+ix = (ir & data_entrytime$pho_left) | (il & data_entrytime$pho_right)
+data_entrytime$not_looked_at[ix] = "pho"
+
+ix = (ir & data_entrytime$ocd_left) | (il & data_entrytime$ocd_right)
+data_entrytime$not_looked_at[ix] = "ocd"
+
+ix = (ir & data_entrytime$neg_left) | (il & data_entrytime$neg_right)
+data_entrytime$not_looked_at[ix] = "neg"
+```
 
 # Attentional Control 
 ## Objective Attentional Control - AX-CPT
@@ -162,22 +197,411 @@ Reactive control can be assessed by performance on the AY trials.
 As AX trials occur with a high frequency (70%), the presence of the target cue "A" on a trial potentiates the already dom nant tendency to make the “target” ("X") response on this trial. Therefore, participants must react to the unexpected presentation of a Y stimulus on trial n by overriding the dominant response tendency (press "AX") to make the less-dominant "non-target" response (press "not AX").
 
 ### Comparisons AX-CPT Between Groups 
-#### Error Rates
-```{r differences between AX-CPT error rates}
+**Extract Coefficients from Model**
+```{julia define contrasts reaction time, include=FALSE}
+using RCall
+using MixedModels
+using JellyMe4
+jl_data_entrytime = @rget data_entrytime
 
+c_rt = Dict(:group=>DummyCoding(;base="healthy"),:looked_right=>EffectsCoding(),:looked_at=>DummyCoding(;base="neutral"))
+c_entrytime = Dict(:group=>DummyCoding(;base="healthy"),:looked_right=>EffectsCoding(),:looked_at=>DummyCoding(;base="neutral"))
 ```
 
-#### Reaction Times 
-```{r differences between AX-CPT reaction times}
 
+#@Bene check whether these contrasts are correct (now specific main and interaction effect, this was not the case in the Script "Hypotheses")
+```{r run final model h1}
+#j $assign("form", formula(mlm_dwelltime))
+j$assign("jl_data_dwelltime", data_dwelltime)
+j$assign("jl_data_entrytime", data_entrytime)
+julia_command("jl_data_entrytime.response .= jl_data_entrytime.response .-1")
+julia_command("using MixedModels")
+julia_command("using JellyMe4")
+
+julia_command("h1_fm_excl_triplet_item = @formula(dwell_diff ~ group + stim_ocd + stim_pho + stim_neg + group&stim_ocd + group&stim_pho + group&stim_neg + 
+              (1 + stim_ocd + stim_pho + stim_neg | participant))")
+
+julia_command("h1_fm_excl_triplet_item = fit(LinearMixedModel, h1_fm_excl_triplet_item, jl_data_dwelltime)")
+
+h1_fm_excl_triplet_item <- julia_eval("robject(:lmerMod, Tuple([h1_fm_excl_triplet_item,jl_data_dwelltime]));",need_return="R")
+
+# Define the model comparisons to test the specific hypothesis of hypothesis 2
+g = (glht(h1_fm_excl_triplet_item, (c("stim_ocd + groupocd:stim_ocd = 0", # Patients with OCD look at idiosyncratic OCD-relevant material longer compared to neutral material (maintenance bias within group)
+                            "(stim_ocd + groupocd:stim_ocd) - (stim_neg + groupocd:stim_neg) = 0", # Patients with OCD look at idiosyncratic OCD-relevant material longer compared to negative material (maintenance bias within group)
+                            "groupocd + groupocd:stim_ocd = 0", # Patients with OCD will show a more pronounced maintenance bias compared to healthy participants (maintenance bias between groups)
+                            "(groupocd + stim_ocd + groupocd:stim_ocd) -  (groupspider + stim_pho + groupspider:stim_pho) = 0" # Patients with OCD will show a more pronounced maintenance to idiosyncratic disorder-specific material compared to patients with spider phobia (maintenance bias between group)
+))))
+
+contest(h1_fm_excl_triplet_item,g$linfct,joint=FALSE,ddf="Satterthwaite")
+```
+
+
+```{r extract coefficients from final model h1}
+# Map ID on Group
+data_id_group <- data_dwelltime %>%
+  dplyr::select(participant,group) %>%
+  unique()
+
+# Extract the individual participant coefficient for each relevant effect
+data_bias_h1 <- data_id_group %>%
+  dplyr::mutate(stim_ocd = coef(h1_fm_excl_triplet_item)$participant$stim_ocd,
+                stim_neg = coef(h1_fm_excl_triplet_item)$participant$stim_neg,
+                stim_pho = coef(h1_fm_excl_triplet_item)$participant$stim_pho,
+                groupocd = coef(h1_fm_excl_triplet_item)$participant$groupocd,
+                groupspider = coef(h1_fm_excl_triplet_item)$participant$groupspider,
+                groupocd_x_stim_ocd = coef(h1_fm_excl_triplet_item)$participant$`groupocd:stim_ocd`,
+                groupocd_x_stim_neg = coef(h1_fm_excl_triplet_item)$participant$`groupocd:stim_neg`,
+                groupspider_x_stim_pho = coef(h1_fm_excl_triplet_item)$participant$`groupspider:stim_pho`)
+
+# Calcualte biases 
+data_bias_h1 <- data_bias_h1 %>%
+  dplyr::mutate(bias_ocdvsneutral = (groupocd + stim_ocd + groupocd_x_stim_ocd) - groupocd,
+                bias_ocdvsnegative = (groupocd + stim_ocd + groupocd_x_stim_ocd) - (groupocd + stim_neg + groupocd_x_stim_neg),
+                bias_ocdhealthy = (groupocd + stim_ocd + groupocd_x_stim_ocd) - stim_ocd,
+                bias_ocdspider = (groupocd + stim_ocd + groupocd_x_stim_ocd) - (groupspider + stim_pho + groupspider_x_stim_pho))
+
+mean(data_bias_h1$bias_ocdvsneutral)
+mean(data_bias_h1$bias_ocdvsnegative)
+mean(data_bias_h1$bias_ocdhealthy)
+mean(data_bias_h1$bias_ocdspider)
+```
+
+
+## H2a 
+#@Bene check whether these contrasts are correct (now specific main and interaction effect, this was not the case in the Script "Hypotheses")
+```{r run final model h2a}
+julia_command("h2a_glm_fm_excl_triplet_item = @formula(response ~ group + stim_ocd + stim_pho + stim_neg + group&stim_ocd + group&stim_pho + group&stim_neg + 
+              (1 + stim_ocd + stim_pho + stim_neg | participant))")
+
+julia_command("h2a_glm_fm_excl_triplet_item = fit(MixedModel, h2a_glm_fm_excl_triplet_item, jl_data_entrytime;contrasts=c_entrytime)")
+
+h2a_glm_fm_excl_triplet_item <- julia_eval("robject(:lmerMod, Tuple([h2a_glm_fm_excl_triplet_item,jl_data_entrytime]));",need_return="R")
+
+# Define the model comparisons to test the specific hypothesis of hypothesis 2
+g = (glht(h2a_glm_fm_excl_triplet_item, (c("stim_ocd + groupocd:stim_ocd = 0", # Patients with OCD are more likely to first fixate on idiosyncratic OCD-relevant material as compared to neutral material (choice bias within group)
+                            "(stim_ocd + groupocd:stim_ocd) - (stim_neg + groupocd:stim_neg) = 0", # Patients with OCD are more likely to first fixate on OCD-relevant material as compared to negative material (choice bias within group)
+                            "stim_ocd = 0", # Healthy participants will not show a bias towards OCD-relevant stimuli compared to neutral stimuli (choice bias within healthy group)
+                            "stim_ocd - stim_neg= 0", # Healthy participants will not show a bias towards OCD-relevant stimuli compared to negative stimuli (choice bias within healthy group)
+                              "stim_pho = 0", # Healthy participants will not show a bias towards spider-relevant stimuli compared to neutral stimuli (choice bias within healthy group)
+                              "stim_pho - stim_neg= 0" # Healthy participants will not show a bias towards spider-relevant stimuli compared to negative stimuli (choice bias within healthy group)
+))))
+contest(h2a_glm_fm_excl_triplet_item,g$linfct,joint=FALSE,ddf="Satterthwaite")
+```
+
+```{r extract coefficients from final model h2a}
+# Extract the individual participant coefficient for each relevant effect
+data_bias_h2a <- data_id_group %>%
+  dplyr::mutate(stim_ocd = coef(h2a_glm_fm_excl_triplet_item)$participant$stim_ocd,
+                stim_neg = coef(h2a_glm_fm_excl_triplet_item)$participant$stim_neg,
+                stim_pho = coef(h2a_glm_fm_excl_triplet_item)$participant$stim_pho,
+                groupocd = coef(h2a_glm_fm_excl_triplet_item)$participant$groupocd,
+                groupspider = coef(h2a_glm_fm_excl_triplet_item)$participant$groupspider,
+                groupocd_x_stim_ocd = coef(h2a_glm_fm_excl_triplet_item)$participant$`groupocd:stim_ocd`,
+                groupocd_x_stim_neg = coef(h2a_glm_fm_excl_triplet_item)$participant$`groupocd:stim_neg`,
+                groupspider_x_stim_pho = coef(h2a_glm_fm_excl_triplet_item)$participant$`groupspider:stim_pho`)
+
+# Calcualte biases 
+data_bias_h2a <- data_bias_h2a %>%
+  dplyr::mutate(bias_ocdvsneutral = (groupocd + stim_ocd + groupocd_x_stim_ocd) - groupocd, # here main effect added?
+                bias_ocdvsnegative = (groupocd + stim_ocd + groupocd_x_stim_ocd) - (groupocd + stim_neg + groupocd_x_stim_neg), # here main effect added?
+                bias_healthy_ocdvsneutral = stim_ocd,
+                bias_healthy_ocdvsnegative = stim_ocd - stim_neg,
+                bias_healthy_spidervsneutral = stim_pho,	
+                bias_healthy_spidervsnegative = stim_pho - stim_neg)
+
+
+# Check for correct definition
+mean(data_bias_h2a$bias_ocdvsneutral)
+mean(data_bias_h2a$bias_ocdvsnegative)
+mean(data_bias_h2a$bias_healthy_ocdvsneutral)
+mean(data_bias_h2a$bias_healthy_ocdvsnegative)
+mean(data_bias_h2a$bias_healthy_spidervsneutral)
+mean(data_bias_h2a$bias_healthy_spidervsnegative)
+```
+
+
+## H2b
+#@Bene check whether these contrasts are correct (now specific main and interaction effect, this was not the case in the Script "Hypotheses")
+```{r run final model h2b}
+# H2b
+julia_command("h2b_fm_excl_triplet_item = @formula(rt ~ group*looked_at + looked_right*group+ 
+              (1 + looked_at + looked_right | participant))")
+
+julia_command("h2b_fm_excl_triplet_item = fit(MixedModel, h2b_fm_excl_triplet_item, jl_data_entrytime;contrasts=c_rt)")
+
+h2b_fm_excl_triplet_item <- julia_eval("robject(:lmerMod, Tuple([h2b_fm_excl_triplet_item,jl_data_entrytime]));",need_return="R")
+
+# Define the model comparisons to test the specific hypothesis of hypothesis 2
+g = (glht(h2b_fm_excl_triplet_item, (c("looked_atocd + groupocd:looked_atocd = 0", # Patients with OCD fixate faster on idiosyncratic OCD-relevant material as compared to neutral material (entry time bias within group)
+                            "(looked_atocd + groupocd:looked_atocd) - (looked_atneg + groupocd:looked_atneg) = 0", # Patients with OCD fixate faster on OCD-relevant material as compared to negative material (entry time bias within group)
+                            "looked_atocd = 0", # Healthy participants will not show a bias towards OCD-relevant stimuli compared to neutral stimuli (entry time bias within healthy group)
+                            "looked_atocd - looked_atneg = 0", # Healthy participants will not show a bias towards OCD-relevant stimuli compared to neutral stimuli (entry time bias within healthy group)
+                              "looked_atpho = 0", # Healthy participants will not show a bias towards spider-relevant stimuli compared to neutral stimuli (entry time bias within healthy group)
+                              "looked_atpho - looked_atneg = 0" # Healthy participants will not show a bias towards spider-relevant stimuli compared to neutral stimuli (entry time bias within healthy group)
+))))
+
+contest(h2b_fm_excl_triplet_item,g$linfct,joint=FALSE,ddf="Satterthwaite")
+```
+
+```{r extract coefficients from final model h2b}
+# Extract the individual participant coefficient for each relevant effect
+data_bias_h2b <- data_id_group %>%
+  dplyr::mutate(looked_atocd = coef(h2b_fm_excl_triplet_item)$participant$looked_atocd,
+                looked_atneg = coef(h2b_fm_excl_triplet_item)$participant$looked_atneg,
+                looked_atpho = coef(h2b_fm_excl_triplet_item)$participant$looked_atpho,
+                groupocd = coef(h2b_fm_excl_triplet_item)$participant$groupocd,
+                groupspider = coef(h2b_fm_excl_triplet_item)$participant$groupspider,
+                groupocd_x_looked_atocd = coef(h2b_fm_excl_triplet_item)$participant$`groupocd:looked_atocd`,
+                groupocd_x_looked_atneg = coef(h2b_fm_excl_triplet_item)$participant$`groupocd:looked_atneg`,
+                groupspider_x_looked_atpho = coef(h2b_fm_excl_triplet_item)$participant$`groupspider:looked_atpho`)
+
+# Calcualte biases 
+data_bias_h2b <- data_bias_h2b %>%
+  dplyr::mutate(bias_ocdvsneutral = (groupocd + looked_atocd + groupocd_x_looked_atocd) - groupocd,
+                bias_ocdvsnegative = (groupocd + looked_atocd + groupocd_x_looked_atocd) - (groupocd + looked_atneg + groupocd_x_looked_atneg),
+                bias_healthy_ocdvsneutral = looked_atocd,
+                bias_healthy_ocdvsnegative = looked_atocd - looked_atneg,
+                bias_healthy_spidervsneutral = looked_atpho,	
+                bias_healthy_spidervsnegative = looked_atpho - looked_atneg)
+
+# Check for correct definition
+mean(data_bias_h2b$bias_ocdvsneutral)
+mean(data_bias_h2b$bias_ocdvsnegative)
+mean(data_bias_h2b$bias_healthy_ocdvsneutral)
+mean(data_bias_h2b$bias_healthy_ocdvsnegative)
+mean(data_bias_h2b$bias_healthy_spidervsneutral)
+mean(data_bias_h2b$bias_healthy_spidervsnegative)
+```
+
+### Create Datasets for Moderation/Correlation Hypotheses
+```{r create attnetional control dataset}
+data_axcpt <- data_dwelltime %>%
+  dplyr::select(participant, 
+                pbi,
+                contains("AX_"),
+                contains("AY_"),
+                contains("BX_"),
+                contains("BY_"),
+                contains("acs")) %>%
+  unique()
+```
+
+```{r create bias dataframes}
+data_bias_h1 <-  full_join(data_bias_h1, data_axcpt)
+data_bias_h2a <-  full_join(data_bias_h2a, data_axcpt)
+data_bias_h2b <-  full_join(data_bias_h2b, data_axcpt)
+```
+
+
+### Error Rates
+```{r h1 differences between AX-CPT error rates}
+# Define the function to process each subset
+process_correlations <- function(data_subset) {
+  corr_results <- data_subset %>% cor_mat()
+  results <- corr_results %>% cor_gather()
+
+  return(results)
+}
+
+# Define the list of patterns for selecting variables
+patterns <- c("AX_error_n", "AY_error_n", "BX_error_n", "BY_error_n")
+
+# Initialise an empty list to store results
+results_error_list_h1 <- list()
+
+# Loop through each pattern, process the data, and store results
+for (pattern in patterns) {
+  data_subset <- data_bias_h1 %>%
+    dplyr::select(contains(pattern), contains("bias")) %>%
+    drop_na()
+  
+  results <- process_correlations(data_subset)
+  results$Pattern <- pattern  # Add a column indicating the pattern
+  results_error_list_h1[[pattern]] <- results
+}
+
+
+results_AX_error_h1 <- as.data.table(results_error_list_h1[1])
+datatable(results_AX_error_h1)
+results_AY_error_h1 <- as.data.table(results_error_list_h1[2])
+datatable(results_AY_error_h1)
+results_BX_error_h1 <- as.data.table(results_error_list_h1[3])
+datatable(results_BX_error_h1)
+results_BY_error_h1 <- as.data.table(results_error_list_h1[4])
+datatable(results_BY_error_h1)
+```
+
+```{r h2a differences between AX-CPT error rates}
+# Initialise an empty list to store results
+results_error_list_h2a <- list()
+
+# Loop through each pattern, process the data, and store results
+for (pattern in patterns) {
+  data_subset <- data_bias_h2a %>%
+    dplyr::select(contains(pattern), contains("bias")) %>%
+    drop_na()
+  
+  results <- process_correlations(data_subset)
+  results$Pattern <- pattern  # Add a column indicating the pattern
+  results_error_list_h2a[[pattern]] <- results
+}
+
+
+results_AX_error_h2a <- as.data.table(results_error_list_h2a[1])
+datatable(results_AX_error_h2a)
+results_AY_error_h2a <- as.data.table(results_error_list_h2a[2])
+datatable(results_AY_error_h2a)
+results_BX_error_h2a <- as.data.table(results_error_list_h2a[3])
+datatable(results_BX_error_h2a)
+results_BY_error_h2a <- as.data.table(results_error_list_h2a[4])
+datatable(results_BY_error_h2a)
+```
+
+```{r h2b differences between AX-CPT error rates}
+# Initialise an empty list to store results
+results_error_list_h2b <- list()
+
+# Loop through each pattern, process the data, and store results
+for (pattern in patterns) {
+  data_subset <- data_bias_h2b %>%
+    dplyr::select(contains(pattern), contains("bias")) %>%
+    drop_na()
+  
+  results <- process_correlations(data_subset)
+  results$Pattern <- pattern  # Add a column indicating the pattern
+  results_error_list_h2b[[pattern]] <- results
+}
+
+results_AX_error_h2b <- as.data.table(results_error_list_h2b[1])
+datatable(results_AX_error_h2b)
+results_AY_error_h2b <- as.data.table(results_error_list_h2b[2])
+datatable(results_AY_error_h2b)
+results_BX_error_h2b <- as.data.table(results_error_list_h2b[3])
+datatable(results_BX_error_h2b)
+results_BY_error_h2b <- as.data.table(results_error_list_h2b[4])
+datatable(results_BY_error_h2b)
+```
+
+### Reaction Time
+```{r h1 differences between AX-CPT reaction time}
+# Define the list of patterns for selecting variables
+patterns <- c("AX_corr_rt_mean", "AY_corr_rt_mean", "BX_corr_rt_mean", "BY_corr_rt_mean")
+
+# Initialise an empty list to store results
+results_rt_list_h1 <- list()
+
+# Loop through each pattern, process the data, and store results
+for (pattern in patterns) {
+  data_subset <- data_bias_h1 %>%
+    dplyr::select(contains(pattern), contains("bias")) %>%
+    drop_na()
+  
+  results <- process_correlations(data_subset)
+  results$Pattern <- pattern  # Add a column indicating the pattern
+  results_rt_list_h1[[pattern]] <- results
+}
+
+results_AX_rt_h1 <- as.data.table(results_rt_list_h1[1])
+datatable(results_AX_rt_h1)
+results_AY_rt_h1 <- as.data.table(results_rt_list_h1[2])
+datatable(results_AY_rt_h1)
+results_BX_rt_h1 <- as.data.table(results_rt_list_h1[3])
+datatable(results_BX_rt_h1)
+results_BY_rt_h1 <- as.data.table(results_rt_list_h1[4])
+datatable(results_BY_rt_h1)
+```
+
+```{r h2a differences between AX-CPT reaction time}
+# Define the list of patterns for selecting variables
+patterns <- c("AX_corr_rt_mean", "AY_corr_rt_mean", "BX_corr_rt_mean", "BY_corr_rt_mean")
+
+# Initialise an empty list to store results
+results_rt_list_h2a <- list()
+
+# Loop through each pattern, process the data, and store results
+for (pattern in patterns) {
+  data_subset <- data_bias_h2a %>%
+    dplyr::select(contains(pattern), contains("bias")) %>%
+    drop_na()
+  
+  results <- process_correlations(data_subset)
+  results$Pattern <- pattern  # Add a column indicating the pattern
+  results_rt_list_h2a[[pattern]] <- results
+}
+
+results_AX_rt_h2a <- as.data.table(results_rt_list_h2a[1])
+datatable(results_AX_rt_h2a)
+results_AY_rt_h2a <- as.data.table(results_rt_list_h2a[2])
+datatable(results_AY_rt_h2a)
+results_BX_rt_h2a <- as.data.table(results_rt_list_h2a[3])
+datatable(results_BX_rt_h2a)
+results_BY_rt_h2a <- as.data.table(results_rt_list_h2a[4])
+datatable(results_BY_rt_h2a)
+```
+
+```{r h2b differences between AX-CPT reaction time}
+# Define the list of patterns for selecting variables
+patterns <- c("AX_corr_rt_mean", "AY_corr_rt_mean", "BX_corr_rt_mean", "BY_corr_rt_mean")
+
+# Initialise an empty list to store results
+results_rt_list_h2b <- list()
+
+# Loop through each pattern, process the data, and store results
+for (pattern in patterns) {
+  data_subset <- data_bias_h2b %>%
+    dplyr::select(contains(pattern), contains("bias")) %>%
+    drop_na()
+  
+  results <- process_correlations(data_subset)
+  results$Pattern <- pattern  # Add a column indicating the pattern
+  results_rt_list_h2b[[pattern]] <- results
+}
+
+results_AX_rt_h2b <- as.data.table(results_rt_list_h2b[1])
+datatable(results_AX_rt_h2b)
+results_AY_rt_h2b <- as.data.table(results_rt_list_h2b[2])
+datatable(results_AY_rt_h2b)
+results_BX_rt_h2b <- as.data.table(results_rt_list_h2b[3])
+datatable(results_BX_rt_h2b)
+results_BY_rt_h2b <- as.data.table(results_rt_list_h2b[4])
+datatable(results_BY_rt_h2b)
 ```
 
 ## Subjective Attentional Control - ACS
-The ACS is a self-report questionnaire assessing the ...
+The ACS is a self-report questionnaire assessing an individuals' perceived attentional control. The ACS entails two subscales
+Focused Attention: This subscale assesses the capacity to concentrate on a specific task or stimulus while ignoring distractions. High scores on this subscale indicate that an individual can maintain their focus on a particular task despite potential interruptions or competing stimuli.
+Selective Attention: This subscale evaluates the ability to selectively direct attention to relevant stimuli while filtering out irrelevant or distracting information. A high score here suggests that the individual can efficiently prioritize important information and ignore extraneous inputs.
+Together, these subscales help in understanding different aspects of attentional control, which is crucial for effective cognitive functioning and task performance.
 
 ### Comparisons ACS Between Groups 
-```{r differences between AX-CPT error rates}
+```{r h1 differences between ACS sum score}
+data_corr_acs_h1 <- data_bias_h1 %>%
+  dplyr::select(acs_sum, acs_focusing, acs_shifting, contains("bias")) %>%
+  drop_na()
 
+corr_acs_h1 <- data_corr_acs_h1 %>% cor_mat()
+corr_acs_h1 <- corr_acs_h1 %>% cor_gather()
+datatable(corr_acs_h1)
+```
+
+```{r h2a differences between ACS sum score}
+data_corr_acs_h2a <- data_bias_h2a %>%
+  dplyr::select(acs_sum, acs_focusing, acs_shifting, contains("bias")) %>%
+  drop_na()
+
+corr_acs_h2a <- data_corr_acs_h2a %>% cor_mat()
+corr_acs_h2a <- corr_acs_h2a %>% cor_gather()
+datatable(corr_acs_h2a)
+```
+
+```{r h2b differences between ACS sum score}
+data_corr_acs_h2b <- data_bias_h2b %>%
+  dplyr::select(acs_sum, acs_focusing, acs_shifting, contains("bias")) %>%
+  drop_na()
+
+corr_acs_h2b <- data_corr_acs_h2b %>% cor_mat()
+corr_acs_h2b <- corr_acs_h2b %>% cor_gather()
+datatable(corr_acs_h2b)
 ```
 
 # Stress
