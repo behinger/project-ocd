@@ -18,16 +18,21 @@ output:
 This is the main analysis file of hypothesis 3 and 4 of the 044_EYE project on Attentional Biases in OCD. This script includes the moderation analses and the correlation analysis to answer the question to potential moderating effects of stress and attentional control. 
 
 ### 3.) Attentional Control
+
 #### Subjective Measure
+
 **a.**	
 In patients with **OCD** and patients with **spider phobia**, there will be a **positive association** between **vigilance bias** and **attentional control** as measured by the self-report questionnaire (Attentional Control Scale). This means the lower the attentional control, the faster patients with OCD or spider phobia will look at OCD-relevant or spider-relevant material, respectively, compared to negative or neutral material.
+
 **b.**	
 In patients with **OCD**, there will be a **negative association** between the **maintenance bias** and **attentional control** as measured by the self-report questionnaire (Attentional Control Scale). This means the lower the attentional control, the longer patients will look at idiosyncratic OCD-relevant material compared to negative or neutral material.
 
-####Objective Measure
-**c.**
+#### Objective Measure
+
+**c.**    
 In patients with **OCD** and patients with **spider phobia**, there will be a positive association between **vigilance bias** and **attentional control** as measured by the objective measure (AX-CPT).
-**d.**
+
+**d.**    
 In patients with **OCD**, there will be a **negative association** between the **maintenance bias** and **attentional control** as measured by the objective measure (AX-CPT).
 
 ### 4.) Stress 
@@ -185,19 +190,7 @@ ix = (ir & data_entrytime$neg_left) | (il & data_entrytime$neg_right)
 data_entrytime$not_looked_at[ix] = "neg"
 ```
 
-# Attentional Control 
-## Objective Attentional Control - AX-CPT
-The AX-CPT is a task where a sequence of letters ar presented to the participant. Each letter is presented one-at-a-time on the computer screen and the participant is asked to respond via button press. Target ("AX") trials are defined as an "A" that is followed by a "X". These trials occurred 70% of the time. Non-target trials are composed of "BX" trials, where the non-target cue (non-A) is followed by a target probe ("X"), "BY" trials, where the non-target cue (non-A) is followed by a non-target probe (non-X), and "AY" trials, where the valid cue ("A") is followed by a non-target probe (non-X). Each of these non-target trials occurs 10% of the time. The AX-CPT can assess proactive and reactive control.
-**Proactive Control**
-Proactive control can be assessed by examining performance on the BX trials. 
-The presence of the non-target "B" cue demands that the participant must actively maintain the goal of making the non-dominant response (i.e., press "non AX") even in the presence of the target probe "X". Thereby, the participants needs to overwrite the response tendency elicited by the target probe "X" on this trial. 
-
-**Reactive Control**
-Reactive control can be assessed by performance on the AY trials. 
-As AX trials occur with a high frequency (70%), the presence of the target cue "A" on a trial potentiates the already dom nant tendency to make the “target” ("X") response on this trial. Therefore, participants must react to the unexpected presentation of a Y stimulus on trial n by overriding the dominant response tendency (press "AX") to make the less-dominant "non-target" response (press "not AX").
-
-### Comparisons AX-CPT Between Groups 
-**Extract Coefficients from Model**
+# Extract Coefficients From Final Models 
 ```{julia define contrasts reaction time, include=FALSE}
 using RCall
 using MixedModels
@@ -234,6 +227,33 @@ g = (glht(h1_fm_excl_triplet_item, (c("stim_ocd + groupocd:stim_ocd = 0", # Pati
 
 contest(h1_fm_excl_triplet_item,g$linfct,joint=FALSE,ddf="Satterthwaite")
 ```
+*Guideline of Interpretation:*
+**1. Contrast: OCD vs. neutral in OCD group**
+
+A positive value would indicate that OCD-relevant stimuli elicit longer gaze durations than neutral stimuli within the OCD group.
+
+A negative value would indicate that neutral stimuli elicit longer gaze durations than OCD-relevant stimuli within the OCD group.
+
+**2. Contrast**
+
+A positive value would indicate that OCD-relevant stimuli elicit longer gaze durations than negative stimuli within the OCD group.
+
+A negative value would indicate that negative stimuli elicit longer gaze durations than OCD-relevant stimuli within the OCD group.
+
+**3. Contrast: OCD group will show a more pronounced maintenance bias as compared to healthy participants**
+A positive value would indicate that OCD patients have longer gaze durations on idiosyncratically OCD-relevant material than healthy individuals do on the same type of stimuli.
+
+--> Essentially, this would mean that the maintenance bias effect in OCD patients is more pronounced compared to the healthy group when looking at OCD-relevant stimuli.
+
+A negative value would indicate that OCD patients have shorter gaze durations on idiosyncratically OCD-relevant stimuli compared to the healthy group’s gaze durations on the same type of stimuli.
+
+**4. Contrast: OCD group will show a more pronounced maintenance bias as compared to spider phobia patients**
+
+A positive value would indicate that OCD patients have longer gaze durations on idiosyncratically OCD-relevant material than spider phobia patients do on their idiosyncratically spider-relevant material. 
+
+--> Essentially, this would mean that the maintenance bias effect in OCD patients is more pronounced compared to the healthy group when looking at OCD-relevant stimuli.
+
+A negative value would indicate that OCD patients have shorter gaze durations on idiosyncratically OCD-relevant stimuli compared to the spider phobia group's gaze on their idiosyncratically spider-relevant material. 
 
 
 ```{r extract coefficients from final model h1}
@@ -268,6 +288,7 @@ mean(data_bias_h1$bias_ocdspider)
 
 
 ## H2a 
+
 #@Bene check whether these contrasts are correct (now specific main and interaction effect, this was not the case in the Script "Hypotheses")
 ```{r run final model h2a}
 julia_command("h2a_glm_fm_excl_triplet_item = @formula(response ~ group + stim_ocd + stim_pho + stim_neg + group&stim_ocd + group&stim_pho + group&stim_neg + 
@@ -321,6 +342,7 @@ mean(data_bias_h2a$bias_healthy_spidervsnegative)
 
 
 ## H2b
+
 #@Bene check whether these contrasts are correct (now specific main and interaction effect, this was not the case in the Script "Hypotheses")
 ```{r run final model h2b}
 # H2b
@@ -373,7 +395,7 @@ mean(data_bias_h2b$bias_healthy_spidervsneutral)
 mean(data_bias_h2b$bias_healthy_spidervsnegative)
 ```
 
-### Create Datasets for Moderation/Correlation Hypotheses
+## Create Datasets for Moderation/Correlation Hypotheses
 ```{r create attnetional control dataset}
 data_axcpt <- data_dwelltime %>%
   dplyr::select(participant, 
@@ -392,8 +414,22 @@ data_bias_h2a <-  full_join(data_bias_h2a, data_axcpt)
 data_bias_h2b <-  full_join(data_bias_h2b, data_axcpt)
 ```
 
+# Attentional Control 
+
+## Objective Attentional Control - AX-CPT
+The AX-CPT is a task where a sequence of letters ar presented to the participant. Each letter is presented one-at-a-time on the computer screen and the participant is asked to respond via button press. Target ("AX") trials are defined as an "A" that is followed by a "X". These trials occurred 70% of the time. Non-target trials are composed of "BX" trials, where the non-target cue (non-A) is followed by a target probe ("X"), "BY" trials, where the non-target cue (non-A) is followed by a non-target probe (non-X), and "AY" trials, where the valid cue ("A") is followed by a non-target probe (non-X). Each of these non-target trials occurs 10% of the time. The AX-CPT can assess proactive and reactive control.
+
+**Proactive Control**
+Proactive control can be assessed by examining performance on the BX trials. 
+The presence of the non-target "B" cue demands that the participant must actively maintain the goal of making the non-dominant response (i.e., press "non AX") even in the presence of the target probe "X". Thereby, the participants needs to overwrite the response tendency elicited by the target probe "X" on this trial. 
+
+**Reactive Control**
+Reactive control can be assessed by performance on the AY trials. 
+As AX trials occur with a high frequency (70%), the presence of the target cue "A" on a trial potentiates the already dom nant tendency to make the “target” ("X") response on this trial. Therefore, participants must react to the unexpected presentation of a Y stimulus on trial n by overriding the dominant response tendency (press "AX") to make the less-dominant "non-target" response (press "not AX").
 
 ### Error Rates
+
+### H1
 ```{r h1 differences between AX-CPT error rates}
 # Define the function to process each subset
 process_correlations <- function(data_subset) {
@@ -431,6 +467,7 @@ results_BY_error_h1 <- as.data.table(results_error_list_h1[4])
 datatable(results_BY_error_h1)
 ```
 
+### H2a
 ```{r h2a differences between AX-CPT error rates}
 # Initialise an empty list to store results
 results_error_list_h2a <- list()
@@ -457,6 +494,7 @@ results_BY_error_h2a <- as.data.table(results_error_list_h2a[4])
 datatable(results_BY_error_h2a)
 ```
 
+### H2b
 ```{r h2b differences between AX-CPT error rates}
 # Initialise an empty list to store results
 results_error_list_h2b <- list()
@@ -483,6 +521,8 @@ datatable(results_BY_error_h2b)
 ```
 
 ### Reaction Time
+
+### H1
 ```{r h1 differences between AX-CPT reaction time}
 # Define the list of patterns for selecting variables
 patterns <- c("AX_corr_rt_mean", "AY_corr_rt_mean", "BX_corr_rt_mean", "BY_corr_rt_mean")
@@ -511,6 +551,7 @@ results_BY_rt_h1 <- as.data.table(results_rt_list_h1[4])
 datatable(results_BY_rt_h1)
 ```
 
+### H2a
 ```{r h2a differences between AX-CPT reaction time}
 # Define the list of patterns for selecting variables
 patterns <- c("AX_corr_rt_mean", "AY_corr_rt_mean", "BX_corr_rt_mean", "BY_corr_rt_mean")
@@ -539,6 +580,7 @@ results_BY_rt_h2a <- as.data.table(results_rt_list_h2a[4])
 datatable(results_BY_rt_h2a)
 ```
 
+### H2b
 ```{r h2b differences between AX-CPT reaction time}
 # Define the list of patterns for selecting variables
 patterns <- c("AX_corr_rt_mean", "AY_corr_rt_mean", "BX_corr_rt_mean", "BY_corr_rt_mean")
@@ -573,7 +615,7 @@ Focused Attention: This subscale assesses the capacity to concentrate on a speci
 Selective Attention: This subscale evaluates the ability to selectively direct attention to relevant stimuli while filtering out irrelevant or distracting information. A high score here suggests that the individual can efficiently prioritize important information and ignore extraneous inputs.
 Together, these subscales help in understanding different aspects of attentional control, which is crucial for effective cognitive functioning and task performance.
 
-### Comparisons ACS Between Groups 
+### H1
 ```{r h1 differences between ACS sum score}
 data_corr_acs_h1 <- data_bias_h1 %>%
   dplyr::select(acs_sum, acs_focusing, acs_shifting, contains("bias")) %>%
@@ -584,6 +626,7 @@ corr_acs_h1 <- corr_acs_h1 %>% cor_gather()
 datatable(corr_acs_h1)
 ```
 
+### H2a
 ```{r h2a differences between ACS sum score}
 data_corr_acs_h2a <- data_bias_h2a %>%
   dplyr::select(acs_sum, acs_focusing, acs_shifting, contains("bias")) %>%
@@ -594,6 +637,7 @@ corr_acs_h2a <- corr_acs_h2a %>% cor_gather()
 datatable(corr_acs_h2a)
 ```
 
+### H2b
 ```{r h2b differences between ACS sum score}
 data_corr_acs_h2b <- data_bias_h2b %>%
   dplyr::select(acs_sum, acs_focusing, acs_shifting, contains("bias")) %>%
