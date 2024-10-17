@@ -202,7 +202,6 @@ c_entrytime = Dict(:group=>DummyCoding(;base="healthy"),:looked_right=>EffectsCo
 ```
 
 
-#@Bene check whether these contrasts are correct (now specific main and interaction effect, this was not the case in the Script "Hypotheses")
 ```{r run final model h1}
 #j $assign("form", formula(mlm_dwelltime))
 j$assign("jl_data_dwelltime", data_dwelltime)
@@ -284,12 +283,44 @@ mean(data_bias_h1$bias_ocdvsneutral)
 mean(data_bias_h1$bias_ocdvsnegative)
 mean(data_bias_h1$bias_ocdhealthy)
 mean(data_bias_h1$bias_ocdspider)
+
+
+# Define as.numeric()
+data_bias_h1 <- data_bias_h1 %>%
+  dplyr::mutate(across(contains("bias"), as.numeric))
+
+# Histogram OCD vs. Neutral
+ggplot(data_bias_h1, aes(x = bias_ocdvsneutral)) +
+  geom_histogram() +
+  labs(x = "OCD vs Neutral Bias", y = "Count", title = "Histogram by Group") +
+  theme_minimal() + 
+  facet_grid(. ~ group)
+
+# Histogram OCD vs. Negative
+ggplot(data_bias_h1, aes(x = bias_ocdvsnegative)) +
+  geom_histogram() +
+  labs(x = "OCD vs Neutral Bias", y = "Count", title = "Histogram by Group") +
+  theme_minimal() + 
+  facet_grid(. ~ group)
+
+# Histogram OCD vs. Healthy
+ggplot(data_bias_h1, aes(x = bias_ocdhealthy)) +
+  geom_histogram() +
+  labs(x = "OCD vs Neutral Bias", y = "Count", title = "Histogram by Group") +
+  theme_minimal() + 
+  facet_grid(. ~ group)
+
+
+# Histogram OCD vs. Spider
+ggplot(data_bias_h1, aes(x = bias_ocdspider)) +
+  geom_histogram() +
+  labs(x = "OCD vs Neutral Bias", y = "Count", title = "Histogram by Group") +
+  theme_minimal() + 
+  facet_grid(. ~ group)
 ```
 
 
 ## H2a 
-
-#@Bene check whether these contrasts are correct (now specific main and interaction effect, this was not the case in the Script "Hypotheses")
 ```{r run final model h2a}
 julia_command("h2a_glm_fm_excl_triplet_item = @formula(response ~ group + stim_ocd + stim_pho + stim_neg + group&stim_ocd + group&stim_pho + group&stim_neg + 
               (1 + stim_ocd + stim_pho + stim_neg | participant))")
@@ -338,12 +369,58 @@ mean(data_bias_h2a$bias_healthy_ocdvsneutral)
 mean(data_bias_h2a$bias_healthy_ocdvsnegative)
 mean(data_bias_h2a$bias_healthy_spidervsneutral)
 mean(data_bias_h2a$bias_healthy_spidervsnegative)
+
+# Define as.numeric()
+data_bias_h2a <- data_bias_h2a %>%
+  dplyr::mutate(across(contains("bias"), as.numeric))
+
+
+# Histogram OCD vs. Neutral
+ggplot(data_bias_h2a, aes(x = bias_ocdvsneutral)) +
+  geom_histogram() +
+  labs(x = "OCD vs Neutral Bias", y = "Count", title = "Histogram by Group") +
+  theme_minimal() + 
+  facet_grid(. ~ group)
+
+# Histogram OCD vs. Negative
+ggplot(data_bias_h2a, aes(x = bias_ocdvsnegative)) +
+  geom_histogram() +
+  labs(x = "OCD vs Neutral Bias", y = "Count", title = "Histogram by Group") +
+  theme_minimal() + 
+  facet_grid(. ~ group)
+
+# Histogram Healthy OCD vs. Neutral
+ggplot(data_bias_h2a, aes(x = bias_healthy_ocdvsneutral)) +
+  geom_histogram() +
+  labs(x = "OCD vs Neutral Bias", y = "Count", title = "Histogram by Group") +
+  theme_minimal() + 
+  facet_grid(. ~ group)
+
+
+# Histogram Healthy OCD vs. Negative
+ggplot(data_bias_h2a, aes(x = bias_healthy_ocdvsnegative)) +
+  geom_histogram() +
+  labs(x = "OCD vs Neutral Bias", y = "Count", title = "Histogram by Group") +
+  theme_minimal() + 
+  facet_grid(. ~ group)
+
+# Histogram Healthy Spider vs. Negative
+ggplot(data_bias_h2a, aes(x = bias_healthy_spidervsneutral)) +
+  geom_histogram() +
+  labs(x = "OCD vs Neutral Bias", y = "Count", title = "Histogram by Group") +
+  theme_minimal() + 
+  facet_grid(. ~ group)
+
+# Histogram Healthy Spider vs. Negative
+ggplot(data_bias_h2a, aes(x = bias_healthy_spidervsnegative)) +
+  geom_histogram() +
+  labs(x = "OCD vs Neutral Bias", y = "Count", title = "Histogram by Group") +
+  theme_minimal() + 
+  facet_grid(. ~ group)
 ```
 
 
 ## H2b
-
-#@Bene check whether these contrasts are correct (now specific main and interaction effect, this was not the case in the Script "Hypotheses")
 ```{r run final model h2b}
 # H2b
 julia_command("h2b_fm_excl_triplet_item = @formula(rt ~ group*looked_at + looked_right*group+ 
@@ -393,6 +470,54 @@ mean(data_bias_h2b$bias_healthy_ocdvsneutral)
 mean(data_bias_h2b$bias_healthy_ocdvsnegative)
 mean(data_bias_h2b$bias_healthy_spidervsneutral)
 mean(data_bias_h2b$bias_healthy_spidervsnegative)
+
+# Define as.numeric()
+data_bias_h2b <- data_bias_h2b %>%
+  dplyr::mutate(across(contains("bias"), as.numeric))
+
+
+# Histogram OCD vs. Neutral
+ggplot(data_bias_h2b, aes(x = bias_ocdvsneutral)) +
+  geom_histogram() +
+  labs(x = "OCD vs Neutral Bias", y = "Count", title = "Histogram by Group") +
+  theme_minimal() + 
+  facet_grid(. ~ group)
+
+# Histogram OCD vs. Negative
+ggplot(data_bias_h2b, aes(x = bias_ocdvsnegative)) +
+  geom_histogram() +
+  labs(x = "OCD vs Neutral Bias", y = "Count", title = "Histogram by Group") +
+  theme_minimal() + 
+  facet_grid(. ~ group)
+
+# Histogram Healthy OCD vs. Neutral
+ggplot(data_bias_h2b, aes(x = bias_healthy_ocdvsneutral)) +
+  geom_histogram() +
+  labs(x = "OCD vs Neutral Bias", y = "Count", title = "Histogram by Group") +
+  theme_minimal() + 
+  facet_grid(. ~ group)
+
+
+# Histogram Healthy OCD vs. Negative
+ggplot(data_bias_h2b, aes(x = bias_healthy_ocdvsnegative)) +
+  geom_histogram() +
+  labs(x = "OCD vs Neutral Bias", y = "Count", title = "Histogram by Group") +
+  theme_minimal() + 
+  facet_grid(. ~ group)
+
+# Histogram Healthy Spider vs. Negative
+ggplot(data_bias_h2b, aes(x = bias_healthy_spidervsneutral)) +
+  geom_histogram() +
+  labs(x = "OCD vs Neutral Bias", y = "Count", title = "Histogram by Group") +
+  theme_minimal() + 
+  facet_grid(. ~ group)
+
+# Histogram Healthy Spider vs. Negative
+ggplot(data_bias_h2b, aes(x = bias_healthy_spidervsnegative)) +
+  geom_histogram() +
+  labs(x = "OCD vs Neutral Bias", y = "Count", title = "Histogram by Group") +
+  theme_minimal() + 
+  facet_grid(. ~ group)
 ```
 
 ## Create Datasets for Moderation/Correlation Hypotheses

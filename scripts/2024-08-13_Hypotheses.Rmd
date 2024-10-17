@@ -87,6 +87,7 @@ The induction of **stress** significantly increases the **maintenance bias** in 
 # install.packages("lmerTest")            # for post-hoc tests of LMMs
 # install.packages("JuliaCall")           # for coding in julia
 # install.packages("sjPlot")              # for creating tables on LMM output
+# install.packages("DT")                  # for creating datatables in R Markdown
 ```
 
 **Load Packages**
@@ -114,15 +115,15 @@ library("gsubfn")
 library("purrr")
 library("data.table")
 library("RColorBrewer")
-library("pals")
+# library("pals")
 library("dplyr")
-library("edfReader")
+# library("edfReader")
 library("devtools")
 library("usethis")
 library("lavaan")
 library("ROCR")
 library("githubinstall")
-library("hdf5r")
+# library("hdf5r")
 # library("eyelinkReader")
 library("stats")
 library("ggplot2")
@@ -135,6 +136,7 @@ library("multcomp")
 library("lmerTest")
 library("JuliaCall")
 library("sjPlot")
+library("DT")
 ```
 
 **Define the Colour Scheme**
@@ -147,7 +149,6 @@ color4 <- "darkseagreen"
 
 # Install Julia
 ```{r install julia}
-#install.packages(c("lme4","juliaCall","multcomp","dplyr"))
 library(JuliaCall)
 options(JULIA_HOME = "/Applications/Julia-1.10.app/Contents/Resources/julia/bin") # need to define the path for my Mac to resolve bug
 j = julia_setup(installJulia = TRUE)
@@ -300,9 +301,6 @@ julia_command("h1_fm_excl_id_item = fit(LinearMixedModel, h1_fm_excl_id_item, jl
 
 
 ## Hypothesis 1: Translate Models to R
-@Bene: h1_fm_complex also runs a long time, same problem as with other complex models
-@Bene: h1_fm_trip_id_item_zc: error happens in Julia: Error in getStart(start, rho$pp) : incorrect number of theta components (!=15) - indicates that model is too complex?
-
 ```{r translate julia models for H1}
 # Model 1: Complex Model
 # h1_fm_complex <- julia_eval("robject(:lmerMod, Tuple([h1_fm_complex,jl_data_dwelltime]));",need_return="R")
@@ -343,14 +341,12 @@ Patients with *OCD* look at *idiosyncratic OCD-relevant material longer* compare
 **b.**
 Patients with *OCD* will show a *more pronounced maintenance bias* compared to *healthy* participants and, with regard to *idiosyncratic disorder-specific material*, compared to patients with *spider phobia*.
 
-@Bene: are the contrasts defined correctly? 
-@Bene: we are now changing ddf = Kenward-Roger to ddf = Satterthwaite - right?
 ```{r generalised hypotheses matrices}
 # Define the model comparisons to test the specific hypothesis of hypothesis 2
-g = (glht(h1_fm_excl_triplet_item, (c("groupocd:stim_ocd - groupocd = 0", # Patients with OCD look at idiosyncratic OCD-relevant material longer compared to neutral material (maintenance bias within group)
-                            "groupocd:stim_ocd - groupocd:stim_neg = 0", # Patients with OCD look at idiosyncratic OCD-relevant material longer compared to negative material (maintenance bias within group)
-                            "groupocd:stim_ocd - stim_ocd = 0", # Patients with OCD will show a more pronounced maintenance bias compared to healthy participants (maintenance bias between groups)
-                            "groupocd:stim_ocd -  groupspider:stim_pho = 0" # Patients with OCD will show a more pronounced maintenance to idiosyncratic disorder-specific material compared to patients with spider phobia (maintenance bias between group)
+g = (glht(h1_fm_excl_triplet_item, (c("stim_ocd + groupocd:stim_ocd >= 0", # Patients with OCD look at idiosyncratic OCD-relevant material longer compared to neutral material (maintenance bias within group)
+                            "(stim_ocd + groupocd:stim_ocd) - (stim_neg + groupocd:stim_neg) >= 0", # Patients with OCD look at idiosyncratic OCD-relevant material longer compared to negative material (maintenance bias within group)
+                            "groupocd + groupocd:stim_ocd >= 0", # Patients with OCD will show a more pronounced maintenance bias compared to healthy participants (maintenance bias between groups)
+                            "(groupocd + stim_ocd + groupocd:stim_ocd) -  (groupspider + stim_pho + groupspider:stim_pho) >= 0" # Patients with OCD will show a more pronounced maintenance to idiosyncratic disorder-specific material compared to patients with spider phobia (maintenance bias between group)
 ))))
 
 # Satterthwaite is a more conservative method than the likelihood ratio test
@@ -360,11 +356,51 @@ g = (glht(h1_fm_excl_triplet_item, (c("groupocd:stim_ocd - groupocd = 0", # Pati
 # 1. Contrasts are more easily to be implemented with contest(), as we have many different contrasts and three groups that we want to compare within- and between-subjects (LR would only allow two comparisons at a time)
 # 2. Satterthwaite is more conservative than Likelihood Ratio Test
 contest(h1_fm_excl_triplet_item,g$linfct,joint=FALSE,ddf="Satterthwaite")
+
+rownames_h1_contrast <- c("stim_ocd + groupocd:stim_ocd","(stim_ocd + groupocd:stim_ocd) - (stim_neg + groupocd:stim_neg)", "groupocd + groupocd:stim_ocd", "(groupocd + stim_ocd + groupocd:stim_ocd) - (groupspider + stim_pho + groupspider:stim_pho)")
+
+h1_contrasts <- as.data.table(contest(h1_fm_excl_triplet_item,g$linfct,joint=FALSE,ddf="Satterthwaite"))
+h1_contrasts <- h1_contrasts %>%
+  dplyr::mutate(contrast = rownames_h1_contrast) %>%
+  dplyr::relocate(contrast, .before = Estimate)
+datatable(h1_contrasts)
 ```
-**Interpretation**
+*Guideline of Interpretation:*
+**1. Contrast: OCD vs. neutral in OCD group**
+
+A positive value would indicate that OCD-relevant stimuli elicit longer gaze durations than neutral stimuli within the OCD group.
+
+A negative value would indicate that neutral stimuli elicit longer gaze durations than OCD-relevant stimuli within the OCD group.
+
+**2. Contrast**
+
+A positive value would indicate that OCD-relevant stimuli elicit longer gaze durations than negative stimuli within the OCD group.
+
+A negative value would indicate that negative stimuli elicit longer gaze durations than OCD-relevant stimuli within the OCD group.
+
+**3. Contrast: OCD group will show a more pronounced maintenance bias as compared to healthy participants**
+A positive value would indicate that OCD patients have longer gaze durations on idiosyncratically OCD-relevant material than healthy individuals do on the same type of stimuli.
+
+--> Essentially, this would mean that the maintenance bias effect in OCD patients is more pronounced compared to the healthy group when looking at OCD-relevant stimuli.
+
+A negative value would indicate that OCD patients have shorter gaze durations on idiosyncratically OCD-relevant stimuli compared to the healthy group’s gaze durations on the same type of stimuli.
+
+**4. Contrast: OCD group will show a more pronounced maintenance bias as compared to spider phobia patients**
+
+A positive value would indicate that OCD patients have longer gaze durations on idiosyncratically OCD-relevant material than spider phobia patients do on their idiosyncratically spider-relevant material. 
+
+--> Essentially, this would mean that the maintenance bias effect in OCD patients is more pronounced compared to the healthy group when looking at OCD-relevant stimuli.
+
+A negative value would indicate that OCD patients have shorter gaze durations on idiosyncratically OCD-relevant stimuli compared to the spider phobia group's gaze on their idiosyncratically spider-relevant material. 
+
+**Interpretation of Results**
+
 OCD patients do not dwell sig. longer at idiosyncratic OCD-relevant material as compared to neutral pictures. 
+
 OCD patients do not dwell sig. longer at idiosyncratic OCD-relevant material as compared to negative pictures. 
+
 OCD patients do not show a sig. more pronounced maintenance bias on idiosyncratic OCD-relevant material as compared to healthy controls on the same material (rated by matched OCD patient).
+
 OCD patients do show a sig. more pronounced maintenance bias on idiosyncratic OCD-relevant material as compared to spider phobia patients on idiosyncratic spider-phobia material.
 
 # Hypothesis 2: Vigilance Bias 
@@ -416,7 +452,7 @@ julia_command("h2a_glm_fm_excl_triplet_id = @formula(response ~ group + stim_ocd
 
 # Model 4b: Exclude Triplet and Item
 julia_command("h2a_glm_fm_excl_triplet_item = @formula(response ~ group + stim_ocd + stim_pho + stim_neg + group&stim_ocd + group&stim_pho + group&stim_neg + 
-              (1 + stim_ocd + stim_pho + stim_neg | participant))")
+              zerocorr(1 + stim_ocd + stim_pho + stim_neg | participant))")
 
 # Model 4c: Exclude Participant and Item
 julia_command("h2a_glm_fm_excl_id_item = @formula(response ~ group + stim_ocd + stim_pho + stim_neg + group&stim_ocd + group&stim_pho + group&stim_neg + 
@@ -424,7 +460,7 @@ julia_command("h2a_glm_fm_excl_id_item = @formula(response ~ group + stim_ocd + 
 ```
 
 ## Hypothesis 2a: Run Models 
-@Bene: we still need to define the contrasts for the entry time analyses, right? Is this done in the same way as for the dwelltime analyses?
+
 ```{julia define contrasts entrytime, include=FALSE}
 using RCall
 using MixedModels
@@ -455,7 +491,6 @@ julia_command("h2a_glm_fm_excl_id_item = fit(MixedModel, h2a_glm_fm_excl_id_item
 ```
 
 ## Hypothesis 2a: Translate Models to R
-@Bene: h2a_glm_fm_complex also runs a long time, same problem as with other complex models. Now also the Models 2 are taking a lot of time translating from julia to R. 
 ```{r translate julia models for H2a}
 # Model 1: Complex Model
 # h2a_glm_fm_complex <- julia_eval("robject(:lmerMod, Tuple([h2a_glm_fm_complex,jl_data_entrytime]));",need_return="R")
@@ -493,31 +528,124 @@ To establish contrast codes that directly test the hypotheses, we first code the
 Patients with **OCD** and patients with **spider phobia** attend to **idiosyncratic disorder-relevant material faster** than they do to **neutral** or **negative** material (vigilance bias), as indicated by the entry time to the corresponding region of interest. 
 **Healthy participants** will **not show a bias** towards disorder-relevant stimuli compared to negative or neutral stimuli.
 
-@Bene: For the GLM this scheme may not work, right? Do we define the contrasts in a different way here? 
 ```{r h2a generalised hypotheses matrices}
 # Define the model comparisons to test the specific hypothesis of hypothesis 2
-g = (glht(h2a_glm_fm_excl_triplet_item, (c("groupocd:stim_ocd - groupocd = 0", # Patients with OCD are more likely to first fixate on idiosyncratic OCD-relevant material as compared to neutral material (choice bias within group)
-                            "groupocd:stim_ocd - groupocd:stim_neg = 0", # Patients with OCD are more likely to first fixate on OCD-relevant material as compared to negative material (choice bias within group)
-                            "stim_ocd = 0", # Healthy participants will not show a bias towards OCD-relevant stimuli compared to neutral stimuli (choice bias within healthy group)
-                            "stim_ocd - stim_neg= 0", # Healthy participants will not show a bias towards OCD-relevant stimuli compared to negative stimuli (choice bias within healthy group)
-                              "stim_pho = 0", # Healthy participants will not show a bias towards spider-relevant stimuli compared to neutral stimuli (choice bias within healthy group)
-                              "stim_pho - stim_neg= 0" # Healthy participants will not show a bias towards spider-relevant stimuli compared to negative stimuli (choice bias within healthy group)
-))))
+g_h2a_directional <- glht(h2a_glm_fm_excl_triplet_item, 
+                      linfct = c("stim_ocd + groupocd:stim_ocd >= 0", 
+                                 # Patients with OCD are more likely to first fixate on OCD-relevant material compared to neutral material
+                                 
+                                 "(stim_ocd + groupocd:stim_ocd) - (stim_neg + groupocd:stim_neg) >= 0", 
+                                 # Patients with OCD are more likely to first fixate on OCD-relevant material compared to negative material
+                                 
+                                 "stim_pho + groupspider:stim_pho >= 0", 
+                                 # Patients with spider phobia are more likely to first fixate on spider-relevant material compared to neutral material
+                                 "(stim_pho + groupspider:stim_pho) - (stim_neg + groupspider:stim_neg) >= 0"
+                                 # Patients with spider phobia are more likely to first fixate on spider-relevant material compared to negative material
+                                 ))
 
-# Satterthwaite is a more conservative method than the likelihood ratio test
-# Likelihood ratio tests always compares two models with each other
-# this is easy when the contrast is a treatment effect, but more difficult if we have three variables
-# Deviation from preregistration - but this option is better, as
-# 1. Contrasts are more easily to be implemented with contest(), as we have many different contrasts and three groups that we want to compare within- and between-subjects (LR would only allow two comparisons at a time)
-# 2. Satterthwaite is more conservative than Likelihood Ratio Test
-contest(h2a_glm_fm_excl_triplet_item,g$linfct,joint=FALSE,ddf="Satterthwaite")
+g_h2a_equality <- glht(h2a_glm_fm_excl_triplet_item, 
+                   linfct = c("stim_ocd = 0", 
+                              # Healthy participants will not show a bias towards OCD-relevant stimuli compared to neutral stimuli
+                              
+                              "stim_ocd - stim_neg = 0", 
+                              # Healthy participants will not show a bias towards OCD-relevant stimuli compared to negative stimuli
+                              
+                              "stim_pho = 0", 
+                              # Healthy participants will not show a bias towards spider-relevant stimuli compared to neutral stimuli
+                              
+                              "stim_pho - stim_neg = 0"
+                              # Healthy participants will not show a bias towards spider-relevant stimuli compared to negative stimuli
+                   ))
+
+# Contest Directional Hypotheses
+contest(h2a_glm_fm_excl_triplet_item,g_h2a_directional$linfct,joint=FALSE,ddf="Satterthwaite")
+
+# Contest Equality Hypotheses
+contest(h2a_glm_fm_excl_triplet_item,g_h2a_equality$linfct,joint=FALSE,ddf="Satterthwaite")
+
+# Create Data Tables 
+rownames_h2a_contrast_directional <- c("stim_ocd + groupocd:stim_ocd", 
+                           "(stim_ocd + groupocd:stim_ocd) - (stim_neg + groupocd:stim_neg)", 
+                           "stim_pho + groupspider:stim_pho",
+                           "(stim_pho + groupspider:stim_pho) - (stim_neg + groupspider:stim_neg)")
+
+rownames_h2a_contrast_equality <- c("stim_ocd", 
+                                    "stim_ocd - stim_neg", 
+                                    "stim_pho", 
+                                    "stim_pho - stim_neg")
+
+h2a_contrasts_directional <- as.data.table(contest(h2a_glm_fm_excl_triplet_item,g_h2a_directional$linfct,joint=FALSE,ddf="Satterthwaite"))
+h2a_contrasts_directional <- h2a_contrasts_directional %>%
+  dplyr::mutate(contrast = rownames_h2a_contrast_directional) %>%
+  dplyr::relocate(contrast, .before = Estimate)
+
+h2a_contrasts_equality <- as.data.table(contest(h2a_glm_fm_excl_triplet_item,g_h2a_equality$linfct,joint=FALSE,ddf="Satterthwaite"))
+h2a_contrasts_equality <- h2a_contrasts_equality %>%
+  dplyr::mutate(contrast = rownames_h2a_contrast_equality) %>%
+  dplyr::relocate(contrast, .before = Estimate)
+
+h2a_contrasts <- full_join(h2a_contrasts_directional, h2a_contrasts_equality)
+datatable(h2a_contrasts)
 ```
-**Interpretation**
+
+*Guideline of Interpretation:*
+**1. Contrast: OCD vs. neutral in OCD group**
+Positive value: This would suggest that OCD patients show a greater likelihood of first fixating on idiosyncratic OCD-relevant material compared to neutral material (i.e., a choice bias towards OCD-relevant stimuli).
+
+Negative value: This would indicate a lower likelihood of first fixating on OCD-relevant material compared to neutral material.
+
+**2. Contrast: OCD vs. negative in OCD group**
+Positive value: This would suggest that OCD patients show a greater bias (likelihood of first fixation) towards OCD-relevant material compared to negative material.
+
+Negative value: This would suggest that OCD patients are more likely to fixate on negative material than OCD-relevant material.
+
+**3. Contrast: spider vs. neutral in spider phobia group**
+Positive value: This would suggest that spider phobia patients show a greater likelihood of first fixating on idiosyncratic spider-relevant material compared to neutral material (i.e., a choice bias towards spider-relevant stimuli).
+
+Negative value: This would indicate a lower likelihood of first fixating on spider-relevant material compared to neutral material.
+
+**4. Contrast: spider vs. negative in spider phobia group**
+Positive value: This would suggest that spider phobia patients show a greater bias (likelihood of first fixation) towards spider-relevant material compared to negative material.
+
+Negative value: This would suggest that spider patients are more likely to fixate on negative material than spider-relevant material.
+
+**5. Contrast: OCD vs. neutral in healthy group**
+Positive value: This would suggest that healthy participants are more likely to fixate on OCD-relevant stimuli compared to neutral stimuli.
+
+Negative value: This would indicate that healthy participants are more likely to fixate on neutral stimuli over OCD-relevant stimuli.
+
+**6. Contrast: OCD vs. negative in healthy group**
+Positive value: Healthy participants show a greater likelihood of first fixating on OCD-relevant stimuli compared to negative stimuli.
+
+Negative value: Healthy participants show a greater likelihood of first fixating on negative stimuli compared to OCD-relevant stimuli.
+
+**7. Contrast: spider vs. neutral in healthy group**
+Positive value: Healthy participants show a greater likelihood of first fixating on spider-relevant stimuli compared to neutral stimuli.
+
+Negative value: Healthy participants show a greater likelihood of first fixating on neutral stimuli compared to spider-relevant stimuli.
+
+**8. Contrast: spider vs. negative in healthy group**
+Positive value: Healthy participants show a greater likelihood of first fixating on spider-relevant stimuli compared to negative stimuli.
+
+Negative value: Healthy participants show a greater likelihood of first fixating on negative stimuli compared to spider-relevant stimuli.
+
+
+**Interpretation of Results**
+
 OCD patients are not sig. more likely to first fixate at idiosyncratic OCD-relevant material as compared to neutral pictures. 
+
 OCD patients are not sig. more likely to first fixate at idiosyncratic OCD-relevant material as compared to negative pictures. 
+
+Spider phobia patients are sig. more likely to first fixate at idiosyncratic spider-relevant material as compared to neutral pictures. 
+
+Spider phobia patients are sig. more likely to first fixate at idiosyncratic spider-relevant material as compared to negative pictures. 
+
 Healthy participants are not sig. more likely to first fixate at OCD-relevant stimuli compared to neutral stimuli.
+
 Healthy participants are not sig. more likely to first fixate at OCD-relevant stimuli compared to negative stimuli.
+
 Healthy participants are sig. less likely to first fixate spider-relevant stimuli compared to neutral stimuli.
+
 Healthy participants are sig. less likely to first fixate spider-relevant stimuli compared to negative stimuli.
 
 ## Hypothesis 2b: Entry Time
@@ -642,29 +770,110 @@ tab_model(h2b_fm_excl_triplet_item)
 Patients with **OCD** and patients with **spider phobia** attend to **idiosyncratic disorder-relevant material faster** than they do to **neutral** or **negative** material (vigilance bias), as indicated by the entry time to the corresponding region of interest. 
 **Healthy participants** will **not show a bias** towards disorder-relevant stimuli compared to negative or neutral stimuli.
 
-@Bene: do we do the same hypothesis test for contrasts here? and if yes, are the contrasts defined correctly?
 ```{r h2b generalised hypotheses matrices}
+# H2b
+julia_command("h2b_fm_excl_triplet_item = @formula(rt ~ group*looked_at + looked_right*group+ 
+              (1 + looked_at + looked_right | participant))")
+
+julia_command("h2b_fm_excl_triplet_item = fit(MixedModel, h2b_fm_excl_triplet_item, jl_data_entrytime;contrasts=c_rt)")
+
+h2b_fm_excl_triplet_item <- julia_eval("robject(:lmerMod, Tuple([h2b_fm_excl_triplet_item,jl_data_entrytime]));",need_return="R")
+
 # Define the model comparisons to test the specific hypothesis of hypothesis 2
-g = (glht(h2b_fm_excl_triplet_item, (c("groupocd:looked_atocd - groupocd = 0", # Patients with OCD fixate faster on idiosyncratic OCD-relevant material as compared to neutral material (entry time bias within group)
-                            "groupocd:looked_atocd - groupocd:looked_atneg = 0", # Patients with OCD fixate faster on OCD-relevant material as compared to negative material (entry time bias within group)
-                            "looked_atocd = 0", # Healthy participants will not show a bias towards OCD-relevant stimuli compared to neutral stimuli (entry time bias within healthy group)
+g_h2b_directional = (glht(h2b_fm_excl_triplet_item, (c("looked_atocd + groupocd:looked_atocd <= 0", # Patients with OCD fixate faster on idiosyncratic OCD-relevant material as compared to neutral material (entry time bias within group)
+                            "(looked_atocd + groupocd:looked_atocd) - (looked_atneg + groupocd:looked_atneg) <= 0", #Patients with OCD fixate faster on OCD-relevant material as compared to negative material (entry time bias within group)
+                            "looked_atpho + groupspider:looked_atpho <= 0", # Patients with spider phobia fixate faster on idiosyncratic spider-relevant material as compared to neutral material (entry time bias within group)
+                            "(looked_atpho + groupspider:looked_atpho) - (looked_atneg + groupspider:looked_atneg) <= 0" # Patients with spider phobia fixate faster on spider-relevant material as compared to negative material (entry time bias within group
+))))
+
+g_h2b_equality = (glht(h2b_fm_excl_triplet_item, (c("looked_atocd = 0", # Healthy participants will not show a bias towards OCD-relevant stimuli compared to neutral stimuli (entry time bias within healthy group)
                             "looked_atocd - looked_atneg = 0", # Healthy participants will not show a bias towards OCD-relevant stimuli compared to neutral stimuli (entry time bias within healthy group)
                               "looked_atpho = 0", # Healthy participants will not show a bias towards spider-relevant stimuli compared to neutral stimuli (entry time bias within healthy group)
                               "looked_atpho - looked_atneg = 0" # Healthy participants will not show a bias towards spider-relevant stimuli compared to neutral stimuli (entry time bias within healthy group)
 ))))
 
-# Satterthwaite is a more conservative method than the likelihood ratio test
-# Likelihood ratio tests always compares two models with each other
-# this is easy when the contrast is a treatment effect, but more difficult if we have three variables
-# Deviation from preregistration - but this option is better, as
-# 1. Contrasts are more easily to be implemented with contest(), as we have many different contrasts and three groups that we want to compare within- and between-subjects (LR would only allow two comparisons at a time)
-# 2. Satterthwaite is more conservative than Likelihood Ratio Test
-contest(h2b_fm_excl_triplet_item,g$linfct,joint=FALSE,ddf="Satterthwaite")
+# Contest Directional Hypotheses
+contest(h2b_fm_excl_triplet_item,g_h2b_directional$linfct,joint=FALSE,ddf="Satterthwaite")
+
+# Contest Equality Hypotheses
+contest(h2b_fm_excl_triplet_item,g_h2b_equality$linfct,joint=FALSE,ddf="Satterthwaite")
+
+# Create Data Tables 
+rownames_h2b_contrast_directional <- c("looked_atocd + groupocd:looked_atocd", 
+                                       "(looked_atocd + groupocd:looked_atocd) - (looked_atneg + groupocd:looked_atneg)", 
+                                       "looked_atpho + groupspider:looked_atpho",
+                                       "(looked_atpho + groupspider:looked_atpho) - (looked_atneg + groupspider:looked_atneg)")
+rownames_h2b_contrast_equality <- c("looked_atocd",
+                                    "looked_atocd - looked_atneg",
+                                    "looked_atpho",
+                                    "looked_atpho - looked_atneg")
+
+
+h2b_contrasts_directional <- as.data.table(contest(h2b_fm_excl_triplet_item,g_h2b_directional$linfct,joint=FALSE,ddf="Satterthwaite"))
+h2b_contrasts_directional <- h2b_contrasts_directional %>%
+  dplyr::mutate(contrast = rownames_h2b_contrast_directional) %>%
+  dplyr::relocate(contrast, .before = Estimate)
+
+h2b_contrasts_equality <- as.data.table(contest(h2b_fm_excl_triplet_item,g_h2b_equality$linfct,joint=FALSE,ddf="Satterthwaite"))
+h2b_contrasts_equality <- h2b_contrasts_equality %>%
+  dplyr::mutate(contrast = rownames_h2b_contrast_equality) %>%
+  dplyr::relocate(contrast, .before = Estimate)
+
+h2b_contrasts <- full_join(h2b_contrasts_directional, h2b_contrasts_equality)
+datatable(h2b_contrasts)
 ```
-**Interpretation**
-OCD patients are not sig. more likely to first fixate at idiosyncratic OCD-relevant material as compared to neutral pictures. 
-OCD patients are not sig. more likely to first fixate at idiosyncratic OCD-relevant material as compared to negative pictures. 
-Healthy participants are not sig. more likely to first fixate at OCD-relevant stimuli compared to neutral stimuli.
-Healthy participants are not sig. more likely to first fixate at OCD-relevant stimuli compared to negative stimuli.
-Healthy participants are not sig. more likely to first fixate spider-relevant stimuli compared to neutral stimuli.
-Healthy participants are not sig. more likely to first fixate spider-relevant stimuli compared to negative stimuli.
+
+*Guideline of Interpretation*
+**1. Contrast: OCD vs. neutral in OCD group**
+Positive value: This suggests that OCD patients take longer to fixate on idiosyncratic OCD-relevant material compared to neutral material (i.e., slower entry time for OCD-relevant stimuli).
+
+Negative value: This suggests that OCD patients fixate faster on OCD-relevant material compared to neutral material (entry time bias towards OCD-relevant stimuli).
+
+**2. Contrast: OCD vs. negative in OCD group**
+Positive value: This suggests that OCD patients take longer to fixate on OCD-relevant material compared to negative material.
+
+Negative value: This suggests that OCD patients fixate faster on OCD-relevant material compared to negative material (entry time bias towards OCD-relevant stimuli).
+
+**3. Contrast: spider vs. neutral in spider phobia group**
+Positive value: This suggests that spider phobia patients take longer to fixate on spider-relevant material compared to neutral material.
+
+Negative value: This suggests that spider phobia patients fixate faster on spider-relevant material compared to neutral material (entry time bias towards spider-relevant stimuli).
+
+**4. Contrast: spider vs. negative in spider phobia group**
+Positive value: This suggests that spider phobia patients take longer to fixate on spider-relevant material compared to negative material.
+
+Negative value: This suggests that spider phobia patients fixate faster on spider-relevant material compared to negative material (entry time bias towards spider-relevant stimuli).
+
+**5. Contrast: OCD vs. neutral in healthy group**
+Positive value: This suggests that healthy participants take longer to fixate on OCD-relevant stimuli compared to neutral stimuli.
+
+Negative value: This suggests that healthy participants fixate faster on neutral stimuli compared to OCD-relevant stimuli (i.e., no bias towards OCD-relevant stimuli).
+
+**6. Contrast: OCD vs. negative in healthy group**
+Positive value: This suggests that healthy participants take longer to fixate on OCD-relevant stimuli compared to negative stimuli.
+
+Negative value: This suggests that healthy participants fixate faster on negative stimuli compared to OCD-relevant stimuli.
+
+**7. Contrast: spider vs. neutral in healthy group**
+Positive value: This suggests that healthy participants take longer to fixate on spider-relevant stimuli compared to neutral stimuli.
+
+Negative value: This suggests that healthy participants fixate faster on neutral stimuli compared to spider-relevant stimuli.
+
+**8. Contrast: spider vs. negative in healthy group**
+Positive value: This suggests that healthy participants take longer to fixate on spider-relevant stimuli compared to negative stimuli.
+
+Negative value: This suggests that healthy participants fixate faster on negative stimuli compared to spider-relevant stimuli.
+
+**Interpretation of Results**
+
+OCD patients are not sig. faster to first fixate at idiosyncratic OCD-relevant material as compared to neutral pictures. 
+
+OCD patients are not sig. faster to first fixate at idiosyncratic OCD-relevant material as compared to negative pictures. 
+
+Healthy participants are not sig. faster to first fixate at OCD-relevant stimuli compared to neutral stimuli.
+
+Healthy participants are not sig. faster to first fixate at OCD-relevant stimuli compared to negative stimuli.
+
+Healthy participants are not sig. faster to first fixate spider-relevant stimuli compared to neutral stimuli.
+
+Healthy participants are not sig. faster to first fixate spider-relevant stimuli compared to negative stimuli.
