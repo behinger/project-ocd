@@ -150,7 +150,7 @@ color4 <- "darkseagreen"
 # Install Julia
 ```{r install julia}
 library(JuliaCall)
-options(JULIA_HOME = "/Applications/Julia-1.10.app/Contents/Resources/julia/bin") # need to define the path for my Mac to resolve bug
+options(JULIA_HOME = "/Applications/Julia-1.11.app/Contents/Resources/julia/bin") # need to define the path for my Mac to resolve bug
 j = julia_setup(installJulia = TRUE)
 ```
 
@@ -170,17 +170,21 @@ ENV["LMER"] ="lmerTest::lmer"
 data_dwelltime = read.csv("/Volumes/109-psy-kp-study/044_EYE/05_Analyses/02_Main Project/01_Scripts/00_Github/project-ocd/data/2024-08-13_data_dwelltime_OA.csv")
 data_entrytime = read.csv("/Volumes/109-psy-kp-study/044_EYE/05_Analyses/02_Main Project/01_Scripts/00_Github/project-ocd/data/2024-08-13_data_entrytime_OA.csv")
 
+# Ensure participant IDs match between entry-time and dwell-time datasets
 data_entrytime$participant = data_dwelltime$participant
 
+# Set reaction time (rt) for the left stimulus using the first entry time to the lower-left position
 data_entrytime$rt = data_entrytime$first_entry_time_left
 
+# For trials where the right stimulus was fixated first, update reaction time with the first entry time to the upper-right position
 ix_right = is.na(data_entrytime$first_entry_time_left)
 data_entrytime$rt[ix_right] = data_entrytime$first_entry_time_right[ix_right]
 
+# Determine which stimulus (lower-left or upper-right) was fixated first and store the corresponding stimulus ID
 data_entrytime$response = data_entrytime$first_entry_ID_left
 data_entrytime$response[ix_right] = data_entrytime$first_entry_ID_right[ix_right]
 
-# stim effects
+# Set contrasts for stimuli attributes based on their positions (lower-left: -1, upper-right: +1)
 data_entrytime$ocd_left = data_entrytime$stim_ocd == -1
 data_entrytime$ocd_right = data_entrytime$stim_ocd == 1
 
@@ -190,12 +194,16 @@ data_entrytime$pho_right = data_entrytime$stim_pho == 1
 data_entrytime$neg_left = data_entrytime$stim_neg == -1
 data_entrytime$neg_right = data_entrytime$stim_neg == 1
 
+# Identify which direction the participant looked first (ir = upper-right, il = lower-left)
 data_entrytime$looked_right = is.na(data_entrytime$first_entry_ID_left)
 ir = data_entrytime$looked_right
 il = !data_entrytime$looked_right
+
+# Initialize columns to store the type of stimulus looked at and not looked at
 data_entrytime$looked_at = 'neutral'
 data_entrytime$not_looked_at = 'neutral'
 
+# Set 'looked_at' based on whether the first fixation was on the lower-left or upper-right stimulus with specific attributes
 ix = (il & data_entrytime$pho_left) | (ir & data_entrytime$pho_right)
 data_entrytime$looked_at[ix] = "pho"
 
@@ -205,6 +213,7 @@ data_entrytime$looked_at[ix] = "ocd"
 ix = (il & data_entrytime$neg_left) | (ir & data_entrytime$neg_right)
 data_entrytime$looked_at[ix] = "neg"
 
+# Set 'not_looked_at' based on the attribute of the stimulus that was not fixated on first
 ix = (ir & data_entrytime$pho_left) | (il & data_entrytime$pho_right)
 data_entrytime$not_looked_at[ix] = "pho"
 
@@ -330,6 +339,9 @@ anova(h1_fm_excl_id, h1_fm_trip_zc, h1_fm_trip_id_zc, h1_fm_excl_triplet, h1_fm_
 
 summary(h1_fm_excl_triplet_item)
 tab_model(h1_fm_excl_triplet_item)
+
+# Export
+tab_model(h1_fm_excl_triplet_item, file = "/Volumes/109-psy-kp-study/044_EYE/06_Results/02_Hauptstudie/MaintenanceBias/summary_h1_fm_excl_triplet_item.doc")
 ```
 
 ## Hypothesis 1: Test of Hypotheses With Contrasts
@@ -364,6 +376,9 @@ h1_contrasts <- h1_contrasts %>%
   dplyr::mutate(contrast = rownames_h1_contrast) %>%
   dplyr::relocate(contrast, .before = Estimate)
 datatable(h1_contrasts)
+
+# Export
+write_xlsx(h1_contrasts, "/Volumes/109-psy-kp-study/044_EYE/06_Results/02_Hauptstudie/MaintenanceBias/h1_contrasts.xlsx")
 ```
 *Guideline of Interpretation:*
 **1. Contrast: OCD vs. neutral in OCD group**
@@ -519,6 +534,9 @@ anova(h2a_glm_fm_trip_zc, h2a_glm_fm_trip_id_zc, h2a_glm_fm_excl_id, h2a_glm_fm_
 # best: h2a_glm_fm_excl_triplet_item
 summary(h2a_glm_fm_excl_triplet_item)
 tab_model(h2a_glm_fm_excl_triplet_item)
+
+# Export 
+tab_model(h2a_glm_fm_excl_triplet_item, file = "/Volumes/109-psy-kp-study/044_EYE/06_Results/02_Hauptstudie/VigilanceBias/summary_h2a_glm_fm_excl_triplet_item.doc")
 ```
 
 ## Hypothesis 2a: Test of Choice Hypothesis With Contrasts
@@ -586,6 +604,9 @@ h2a_contrasts_equality <- h2a_contrasts_equality %>%
 
 h2a_contrasts <- full_join(h2a_contrasts_directional, h2a_contrasts_equality)
 datatable(h2a_contrasts)
+
+# Export 
+write_xlsx(h2a_contrasts, "/Volumes/109-psy-kp-study/044_EYE/06_Results/02_Hauptstudie/VigilanceBias/h2a_contrasts.xlsx")
 ```
 
 *Guideline of Interpretation:*
@@ -644,9 +665,9 @@ Healthy participants are not sig. more likely to first fixate at OCD-relevant st
 
 Healthy participants are not sig. more likely to first fixate at OCD-relevant stimuli compared to negative stimuli.
 
-Healthy participants are sig. less likely to first fixate spider-relevant stimuli compared to neutral stimuli.
+Healthy participants are sig. more likely to first fixate spider-relevant stimuli compared to neutral stimuli.
 
-Healthy participants are sig. less likely to first fixate spider-relevant stimuli compared to negative stimuli.
+Healthy participants are sig. more likely to first fixate spider-relevant stimuli compared to negative stimuli.
 
 ## Hypothesis 2b: Entry Time
 ```{r create julia models for H2b reaction time}
@@ -763,6 +784,9 @@ anova(h2b_fm_trip_zc, h2b_fm_trip_id_zc, h2b_fm_excl_id, h2b_fm_excl_triplet, h2
 # best: h2b_fm_excl_triplet_item
 summary(h2b_fm_excl_triplet_item)
 tab_model(h2b_fm_excl_triplet_item)
+
+# Export 
+tab_model(h2b_fm_excl_triplet_item, file = "/Volumes/109-psy-kp-study/044_EYE/06_Results/02_Hauptstudie/VigilanceBias/summary_h2b_fm_excl_triplet_item.doc")
 ```
 
 ## Hypothesis 2b: Test of Entry Time Hypothesis With Contrasts
@@ -821,6 +845,9 @@ h2b_contrasts_equality <- h2b_contrasts_equality %>%
 
 h2b_contrasts <- full_join(h2b_contrasts_directional, h2b_contrasts_equality)
 datatable(h2b_contrasts)
+
+# Export
+write_xlsx(h2b_contrasts, "/Volumes/109-psy-kp-study/044_EYE/06_Results/02_Hauptstudie/VigilanceBias/h2b_contrasts.xlsx")
 ```
 
 *Guideline of Interpretation*
@@ -869,6 +896,10 @@ Negative value: This suggests that healthy participants fixate faster on negativ
 OCD patients are not sig. faster to first fixate at idiosyncratic OCD-relevant material as compared to neutral pictures. 
 
 OCD patients are not sig. faster to first fixate at idiosyncratic OCD-relevant material as compared to negative pictures. 
+
+Patients with spider phobia are sig. faster to first fixate at idiosyncratic spider-relevant material as compared to neutral pictures. 
+
+Patients with spider phobia are sig. faster to first fixate at idiosyncratic spider-relevant material as compared to negative pictures. 
 
 Healthy participants are not sig. faster to first fixate at OCD-relevant stimuli compared to neutral stimuli.
 
