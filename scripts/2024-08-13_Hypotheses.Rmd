@@ -289,51 +289,51 @@ julia_command("h1_fm_excl_id_item = @formula(dwell_diff ~ group + stim_ocd + sti
 
 ## Hypothesis 1: Run Models 
 ```{r run julia models for H1}
-# Model 1
-julia_command("h1_fm_complex = fit(LinearMixedModel, h1_fm_complex, jl_data_dwelltime)")
-
-# Models 2: Zero Correlation
-julia_command("h1_fm_trip_zc = fit(LinearMixedModel, h1_fm_triplet_zerocorr, jl_data_dwelltime)")
-julia_command("h1_fm_trip_id_zc = fit(LinearMixedModel, h1_fm_triplet_id_zerocorr, jl_data_dwelltime)")
-julia_command("h1_fm_trip_id_item_zc = fit(LinearMixedModel, h1_fm_triplet_id_item_zerocorr, jl_data_dwelltime)")
-
-# Models 3: Exclude One Random Effect
-julia_command("h1_fm_excl_id = fit(LinearMixedModel, h1_fm_excl_id, jl_data_dwelltime)")
-julia_command("h1_fm_excl_triplet = fit(LinearMixedModel, h1_fm_excl_triplet, jl_data_dwelltime)")
-julia_command("h1_fm_excl_item = fit(LinearMixedModel, h1_fm_excl_item, jl_data_dwelltime)")
-  
-# Models 4: Exclude Two Random Effects
-julia_command("h1_fm_excl_triplet_id = fit(LinearMixedModel, h1_fm_excl_triplet_id, jl_data_dwelltime)")
+# # Model 1
+# julia_command("h1_fm_complex = fit(LinearMixedModel, h1_fm_complex, jl_data_dwelltime)")
+# 
+# # Models 2: Zero Correlation
+# julia_command("h1_fm_trip_zc = fit(LinearMixedModel, h1_fm_triplet_zerocorr, jl_data_dwelltime)")
+# julia_command("h1_fm_trip_id_zc = fit(LinearMixedModel, h1_fm_triplet_id_zerocorr, jl_data_dwelltime)")
+# julia_command("h1_fm_trip_id_item_zc = fit(LinearMixedModel, h1_fm_triplet_id_item_zerocorr, jl_data_dwelltime)")
+# 
+# # Models 3: Exclude One Random Effect
+# julia_command("h1_fm_excl_id = fit(LinearMixedModel, h1_fm_excl_id, jl_data_dwelltime)")
+# julia_command("h1_fm_excl_triplet = fit(LinearMixedModel, h1_fm_excl_triplet, jl_data_dwelltime)")
+# julia_command("h1_fm_excl_item = fit(LinearMixedModel, h1_fm_excl_item, jl_data_dwelltime)")
+#   
+# # Models 4: Exclude Two Random Effects
+# julia_command("h1_fm_excl_triplet_id = fit(LinearMixedModel, h1_fm_excl_triplet_id, jl_data_dwelltime)")
 julia_command("h1_fm_excl_triplet_item = fit(LinearMixedModel, h1_fm_excl_triplet_item, jl_data_dwelltime)")
-julia_command("h1_fm_excl_id_item = fit(LinearMixedModel, h1_fm_excl_id_item, jl_data_dwelltime)")
+# julia_command("h1_fm_excl_id_item = fit(LinearMixedModel, h1_fm_excl_id_item, jl_data_dwelltime)")
 ```
 
 
 ## Hypothesis 1: Translate Models to R
 ```{r translate julia models for H1}
-# Model 1: Complex Model
-# h1_fm_complex <- julia_eval("robject(:lmerMod, Tuple([h1_fm_complex,jl_data_dwelltime]));",need_return="R")
-
-# Models 2: Zero Correlation
-h1_fm_trip_zc <- julia_eval("robject(:lmerMod, Tuple([h1_fm_trip_zc,jl_data_dwelltime]));",need_return="R")
-h1_fm_trip_id_zc <- julia_eval("robject(:lmerMod, Tuple([h1_fm_trip_id_zc,jl_data_dwelltime]));",need_return="R")
-# h1_fm_trip_id_item_zc <- julia_eval("robject(:lmerMod, Tuple([h1_fm_trip_id_item_zc,jl_data_dwelltime]));",need_return="R") # error happens in Julia: Error in getStart(start, rho$pp) : incorrect number of theta components (!=15)
-
-# Models 3: Exclude One Random Effect
-h1_fm_excl_id <- julia_eval("robject(:lmerMod, Tuple([h1_fm_excl_id,jl_data_dwelltime]));",need_return="R")
-h1_fm_excl_triplet <- julia_eval("robject(:lmerMod, Tuple([h1_fm_excl_triplet,jl_data_dwelltime]));",need_return="R")
-h1_fm_excl_item <- julia_eval("robject(:lmerMod, Tuple([h1_fm_excl_item,jl_data_dwelltime]));",need_return="R")
-
-# Models 4: Exclude Two Random Effects
-h1_fm_excl_triplet_id <- julia_eval("robject(:lmerMod, Tuple([h1_fm_excl_triplet_id,jl_data_dwelltime]));",need_return="R")
+# # Model 1: Complex Model
+# # h1_fm_complex <- julia_eval("robject(:lmerMod, Tuple([h1_fm_complex,jl_data_dwelltime]));",need_return="R")
+# 
+# # Models 2: Zero Correlation
+# h1_fm_trip_zc <- julia_eval("robject(:lmerMod, Tuple([h1_fm_trip_zc,jl_data_dwelltime]));",need_return="R")
+# h1_fm_trip_id_zc <- julia_eval("robject(:lmerMod, Tuple([h1_fm_trip_id_zc,jl_data_dwelltime]));",need_return="R")
+# # h1_fm_trip_id_item_zc <- julia_eval("robject(:lmerMod, Tuple([h1_fm_trip_id_item_zc,jl_data_dwelltime]));",need_return="R") # error happens in Julia: Error in getStart(start, rho$pp) : incorrect number of theta components (!=15)
+# 
+# # Models 3: Exclude One Random Effect
+# h1_fm_excl_id <- julia_eval("robject(:lmerMod, Tuple([h1_fm_excl_id,jl_data_dwelltime]));",need_return="R")
+# h1_fm_excl_triplet <- julia_eval("robject(:lmerMod, Tuple([h1_fm_excl_triplet,jl_data_dwelltime]));",need_return="R")
+# h1_fm_excl_item <- julia_eval("robject(:lmerMod, Tuple([h1_fm_excl_item,jl_data_dwelltime]));",need_return="R")
+# 
+# # Models 4: Exclude Two Random Effects
+# h1_fm_excl_triplet_id <- julia_eval("robject(:lmerMod, Tuple([h1_fm_excl_triplet_id,jl_data_dwelltime]));",need_return="R")
 h1_fm_excl_triplet_item <- julia_eval("robject(:lmerMod, Tuple([h1_fm_excl_triplet_item,jl_data_dwelltime]));",need_return="R")
-h1_fm_excl_id_item <- julia_eval("robject(:lmerMod, Tuple([h1_fm_excl_id_item,jl_data_dwelltime]));",need_return="R")
+# h1_fm_excl_id_item <- julia_eval("robject(:lmerMod, Tuple([h1_fm_excl_id_item,jl_data_dwelltime]));",need_return="R")
 ```
 
 ### Hypothesis 1: Evaluate Best Fitting Model 
 ```{r evaluate best fitting model H1}
 # h1_fm_complex, h1_fm_trip_id_item_zc,
-anova(h1_fm_excl_id, h1_fm_trip_zc, h1_fm_trip_id_zc, h1_fm_excl_triplet, h1_fm_excl_item, h1_fm_excl_triplet_id, h1_fm_excl_triplet_item, h1_fm_excl_id_item)
+# anova(h1_fm_excl_id, h1_fm_trip_zc, h1_fm_trip_id_zc, h1_fm_excl_triplet, h1_fm_excl_item, h1_fm_excl_triplet_id, h1_fm_excl_triplet_item, h1_fm_excl_id_item)
 
 # best: h1_fm_excl_triplet_item
 
@@ -418,6 +418,58 @@ OCD patients do not show a sig. more pronounced maintenance bias on idiosyncrati
 
 OCD patients do show a sig. more pronounced maintenance bias on idiosyncratic OCD-relevant material as compared to spider phobia patients on idiosyncratic spider-phobia material.
 
+# Hypothesis 1 - Sensitivity Analysis: Exclduing 0 Fixations on AOI
+```{r h1 sensitivity analysis - excl. 0 dwelltime}
+data_dwelltime_excl0 <- data_dwelltime %>%
+  dplyr::filter(!c(IA_FIXATION_COUNT_left == 0 | IA_FIXATION_COUNT_right == 0))
+
+#j $assign("form", formula(mlm_dwelltime))
+j$assign("jl_data_dwelltime_excl0", data_dwelltime_excl0)
+julia_command("using MixedModels")
+julia_command("using JellyMe4")
+
+# Model 4b: Exclude Triplet and Item
+julia_command("h1_fm_excl_triplet_item_excl0 = @formula(dwell_diff ~ group + stim_ocd + stim_pho + stim_neg + group&stim_ocd + group&stim_pho + group&stim_neg + 
+              (1 + stim_ocd + stim_pho + stim_neg | participant))")
+
+julia_command("h1_fm_excl_triplet_item_excl0 = fit(LinearMixedModel, h1_fm_excl_triplet_item_excl0, jl_data_dwelltime_excl0)")
+
+h1_fm_excl_triplet_item_excl0 <- julia_eval("robject(:lmerMod, Tuple([h1_fm_excl_triplet_item_excl0,jl_data_dwelltime_excl0]));",need_return="R")
+
+summary(h1_fm_excl_triplet_item_excl0)
+tab_model(h1_fm_excl_triplet_item_excl0)
+
+# Export
+tab_model(h1_fm_excl_triplet_item_excl0, file = "/Volumes/109-psy-kp-study/044_EYE/06_Results/02_Hauptstudie/MaintenanceBias/summary_h1_fm_excl_triplet_item_excl0.doc")
+
+# Define the model comparisons to test the specific hypothesis of hypothesis 2
+g = (glht(h1_fm_excl_triplet_item_excl0, (c("stim_ocd + groupocd:stim_ocd >= 0", # Patients with OCD look at idiosyncratic OCD-relevant material longer compared to neutral material (maintenance bias within group)
+                            "(stim_ocd + groupocd:stim_ocd) - (stim_neg + groupocd:stim_neg) >= 0", # Patients with OCD look at idiosyncratic OCD-relevant material longer compared to negative material (maintenance bias within group)
+                            "groupocd + groupocd:stim_ocd >= 0", # Patients with OCD will show a more pronounced maintenance bias compared to healthy participants (maintenance bias between groups)
+                            "(groupocd + stim_ocd + groupocd:stim_ocd) -  (groupspider + stim_pho + groupspider:stim_pho) >= 0" # Patients with OCD will show a more pronounced maintenance to idiosyncratic disorder-specific material compared to patients with spider phobia (maintenance bias between group)
+))))
+
+# Satterthwaite is a more conservative method than the likelihood ratio test
+# Likelihood ratio tests always compares two models with each other
+# this is easy when the contrast is a treatment effect, but more difficult if we have three variables
+# Deviation from preregistration - but this option is better, as
+# 1. Contrasts are more easily to be implemented with contest(), as we have many different contrasts and three groups that we want to compare within- and between-subjects (LR would only allow two comparisons at a time)
+# 2. Satterthwaite is more conservative than Likelihood Ratio Test
+contest(h1_fm_excl_triplet_item_excl0,g$linfct,joint=FALSE,ddf="Satterthwaite")
+
+rownames_h1_contrast_excl0 <- c("stim_ocd + groupocd:stim_ocd","(stim_ocd + groupocd:stim_ocd) - (stim_neg + groupocd:stim_neg)", "groupocd + groupocd:stim_ocd", "(groupocd + stim_ocd + groupocd:stim_ocd) - (groupspider + stim_pho + groupspider:stim_pho)")
+
+h1_contrasts_excl0 <- as.data.table(contest(h1_fm_excl_triplet_item_excl0,g$linfct,joint=FALSE,ddf="Satterthwaite"))
+h1_contrasts_excl0 <- h1_contrasts_excl0 %>%
+  dplyr::mutate(contrast = rownames_h1_contrast_excl0) %>%
+  dplyr::relocate(contrast, .before = Estimate)
+datatable(h1_contrasts_excl0)
+
+# Export
+write_xlsx(h1_contrasts_excl0, "/Volumes/109-psy-kp-study/044_EYE/06_Results/02_Hauptstudie/MaintenanceBias/h1_contrasts_excl0.xlsx")
+```
+Replicates results shown with total dataset. 
+
 # Hypothesis 2: Vigilance Bias 
 **From Complex to Simple Multilevel Models**
 ## Hypothesis 2a: Choice (wo Entry Time)
@@ -467,7 +519,7 @@ julia_command("h2a_glm_fm_excl_triplet_id = @formula(response ~ group + stim_ocd
 
 # Model 4b: Exclude Triplet and Item
 julia_command("h2a_glm_fm_excl_triplet_item = @formula(response ~ group + stim_ocd + stim_pho + stim_neg + group&stim_ocd + group&stim_pho + group&stim_neg + 
-              zerocorr(1 + stim_ocd + stim_pho + stim_neg | participant))")
+              (1 + stim_ocd + stim_pho + stim_neg | participant))")
 
 # Model 4c: Exclude Participant and Item
 julia_command("h2a_glm_fm_excl_id_item = @formula(response ~ group + stim_ocd + stim_pho + stim_neg + group&stim_ocd + group&stim_pho + group&stim_neg + 
@@ -486,50 +538,50 @@ c_entrytime = Dict(:group=>DummyCoding(;base="healthy"),:looked_right=>EffectsCo
 ```
 
 ```{r run julia models for H2a}
-# Model 1
-julia_command("h2a_glm_fm_complex = fit(MixedModel, h2a_glm_fm_complex, jl_data_entrytime;contrasts=c_entrytime)")
-
-# Models 2: Zero Correlation
-julia_command("h2a_glm_fm_trip_zc = fit(MixedModel, h2a_glm_fm_triplet_zerocorr, jl_data_entrytime;contrasts=c_entrytime)")
-julia_command("h2a_glm_fm_trip_id_zc = fit(MixedModel, h2a_glm_fm_triplet_id_zerocorr, jl_data_entrytime;contrasts=c_entrytime)")
-julia_command("h2a_glm_fm_trip_id_item_zc = fit(MixedModel, h2a_glm_fm_triplet_id_item_zerocorr, jl_data_entrytime;contrasts=c_entrytime)")
-
-# Models 3: Exclude One Random Effect
-julia_command("h2a_glm_fm_excl_id = fit(MixedModel, h2a_glm_fm_excl_id, jl_data_entrytime;contrasts=c_entrytime)")
-julia_command("h2a_glm_fm_excl_triplet = fit(MixedModel, h2a_glm_fm_excl_triplet, jl_data_entrytime;contrasts=c_entrytime)")
-julia_command("h2a_glm_fm_excl_item = fit(MixedModel, h2a_glm_fm_excl_item, jl_data_entrytime;contrasts=c_entrytime)")
-
-# Models 4: Exclude Two Random Effects
-julia_command("h2a_glm_fm_excl_triplet_id = fit(MixedModel, h2a_glm_fm_excl_triplet_id, jl_data_entrytime;contrasts=c_entrytime)")
+# # Model 1
+# julia_command("h2a_glm_fm_complex = fit(MixedModel, h2a_glm_fm_complex, jl_data_entrytime;contrasts=c_entrytime)")
+# 
+# # Models 2: Zero Correlation
+# julia_command("h2a_glm_fm_trip_zc = fit(MixedModel, h2a_glm_fm_triplet_zerocorr, jl_data_entrytime;contrasts=c_entrytime)")
+# julia_command("h2a_glm_fm_trip_id_zc = fit(MixedModel, h2a_glm_fm_triplet_id_zerocorr, jl_data_entrytime;contrasts=c_entrytime)")
+# julia_command("h2a_glm_fm_trip_id_item_zc = fit(MixedModel, h2a_glm_fm_triplet_id_item_zerocorr, jl_data_entrytime;contrasts=c_entrytime)")
+# 
+# # Models 3: Exclude One Random Effect
+# julia_command("h2a_glm_fm_excl_id = fit(MixedModel, h2a_glm_fm_excl_id, jl_data_entrytime;contrasts=c_entrytime)")
+# julia_command("h2a_glm_fm_excl_triplet = fit(MixedModel, h2a_glm_fm_excl_triplet, jl_data_entrytime;contrasts=c_entrytime)")
+# julia_command("h2a_glm_fm_excl_item = fit(MixedModel, h2a_glm_fm_excl_item, jl_data_entrytime;contrasts=c_entrytime)")
+# 
+# # Models 4: Exclude Two Random Effects
+# julia_command("h2a_glm_fm_excl_triplet_id = fit(MixedModel, h2a_glm_fm_excl_triplet_id, jl_data_entrytime;contrasts=c_entrytime)")
 julia_command("h2a_glm_fm_excl_triplet_item = fit(MixedModel, h2a_glm_fm_excl_triplet_item, jl_data_entrytime;contrasts=c_entrytime)")
-julia_command("h2a_glm_fm_excl_id_item = fit(MixedModel, h2a_glm_fm_excl_id_item, jl_data_entrytime;contrasts=c_entrytime)")
+# julia_command("h2a_glm_fm_excl_id_item = fit(MixedModel, h2a_glm_fm_excl_id_item, jl_data_entrytime;contrasts=c_entrytime)")
 ```
 
 ## Hypothesis 2a: Translate Models to R
 ```{r translate julia models for H2a}
-# Model 1: Complex Model
-# h2a_glm_fm_complex <- julia_eval("robject(:lmerMod, Tuple([h2a_glm_fm_complex,jl_data_entrytime]));",need_return="R")
-
-# Models 2: Zero Correlation
-h2a_glm_fm_trip_zc <- julia_eval("robject(:lmerMod, Tuple([h2a_glm_fm_trip_zc,jl_data_entrytime]));",need_return="R")
-h2a_glm_fm_trip_id_zc <- julia_eval("robject(:lmerMod, Tuple([h2a_glm_fm_trip_id_zc,jl_data_entrytime]));",need_return="R")
-# h2a_glm_fm_trip_id_item_zc <- julia_eval("robject(:lmerMod, Tuple([h2a_glm_fm_trip_id_item_zc,jl_data_entrytime]));",need_return="R")
-
-# Models 3: Exclude One Random Effect
-h2a_glm_fm_excl_id <- julia_eval("robject(:lmerMod, Tuple([h2a_glm_fm_excl_id,jl_data_entrytime]));",need_return="R")
-h2a_glm_fm_excl_triplet <- julia_eval("robject(:lmerMod, Tuple([h2a_glm_fm_excl_triplet,jl_data_entrytime]));",need_return="R")
-h2a_glm_fm_excl_item <- julia_eval("robject(:lmerMod, Tuple([h2a_glm_fm_excl_item,jl_data_entrytime]));",need_return="R")
-
-# Models 4: Exclude Two Random Effects
-h2a_glm_fm_excl_triplet_id <- julia_eval("robject(:lmerMod, Tuple([h2a_glm_fm_excl_triplet_id,jl_data_entrytime]));",need_return="R")
+# # Model 1: Complex Model
+# # h2a_glm_fm_complex <- julia_eval("robject(:lmerMod, Tuple([h2a_glm_fm_complex,jl_data_entrytime]));",need_return="R")
+# 
+# # Models 2: Zero Correlation
+# h2a_glm_fm_trip_zc <- julia_eval("robject(:lmerMod, Tuple([h2a_glm_fm_trip_zc,jl_data_entrytime]));",need_return="R")
+# h2a_glm_fm_trip_id_zc <- julia_eval("robject(:lmerMod, Tuple([h2a_glm_fm_trip_id_zc,jl_data_entrytime]));",need_return="R")
+# # h2a_glm_fm_trip_id_item_zc <- julia_eval("robject(:lmerMod, Tuple([h2a_glm_fm_trip_id_item_zc,jl_data_entrytime]));",need_return="R")
+# 
+# # Models 3: Exclude One Random Effect
+# h2a_glm_fm_excl_id <- julia_eval("robject(:lmerMod, Tuple([h2a_glm_fm_excl_id,jl_data_entrytime]));",need_return="R")
+# h2a_glm_fm_excl_triplet <- julia_eval("robject(:lmerMod, Tuple([h2a_glm_fm_excl_triplet,jl_data_entrytime]));",need_return="R")
+# h2a_glm_fm_excl_item <- julia_eval("robject(:lmerMod, Tuple([h2a_glm_fm_excl_item,jl_data_entrytime]));",need_return="R")
+# 
+# # Models 4: Exclude Two Random Effects
+# h2a_glm_fm_excl_triplet_id <- julia_eval("robject(:lmerMod, Tuple([h2a_glm_fm_excl_triplet_id,jl_data_entrytime]));",need_return="R")
 h2a_glm_fm_excl_triplet_item <- julia_eval("robject(:lmerMod, Tuple([h2a_glm_fm_excl_triplet_item,jl_data_entrytime]));",need_return="R")
-h2a_glm_fm_excl_id_item <- julia_eval("robject(:lmerMod, Tuple([h2a_glm_fm_excl_id_item,jl_data_entrytime]));",need_return="R")
+# h2a_glm_fm_excl_id_item <- julia_eval("robject(:lmerMod, Tuple([h2a_glm_fm_excl_id_item,jl_data_entrytime]));",need_return="R")
 ```
 
 ### Evaluate Best Fitting Model 
 ```{r evaluate best fitting model H2a}
 #h2a_glm_fm_complex, h2a_glm_fm_trip_id_item_zc
-anova(h2a_glm_fm_trip_zc, h2a_glm_fm_trip_id_zc, h2a_glm_fm_excl_id, h2a_glm_fm_excl_triplet, h2a_glm_fm_excl_item, h2a_glm_fm_excl_triplet_id, h2a_glm_fm_excl_triplet_item, h2a_glm_fm_excl_id_item)
+# anova(h2a_glm_fm_trip_zc, h2a_glm_fm_trip_id_zc, h2a_glm_fm_excl_id, h2a_glm_fm_excl_triplet, h2a_glm_fm_excl_item, h2a_glm_fm_excl_triplet_id, h2a_glm_fm_excl_triplet_item, h2a_glm_fm_excl_id_item)
 
 # best: h2a_glm_fm_excl_triplet_item
 summary(h2a_glm_fm_excl_triplet_item)
@@ -736,50 +788,50 @@ c_rt = Dict(:group=>DummyCoding(;base="healthy"),:looked_right=>EffectsCoding(),
 
 
 ```{r run julia models for H2b}
-# Model 1
-julia_command("h2b_fm_complex = fit(MixedModel, h2b_fm_complex, jl_data_entrytime,contrasts=c_rt)")
-
-# Models 2: Zero Correlation
-julia_command("h2b_fm_trip_zc = fit(MixedModel, h2b_fm_triplet_zerocorr, jl_data_entrytime,contrasts=c_rt)")
-julia_command("h2b_fm_trip_id_zc = fit(MixedModel, h2b_fm_triplet_id_zerocorr, jl_data_entrytime;contrasts=c_rt)")
-julia_command("h2b_fm_trip_id_item_zc = fit(MixedModel, h2b_fm_triplet_id_item_zerocorr, jl_data_entrytime;contrasts=c_rt)")
-
-# Models 3: Exclude One Random Effect
-julia_command("h2b_fm_excl_id = fit(MixedModel, h2b_fm_excl_id, jl_data_entrytime;contrasts=c_rt)")
-julia_command("h2b_fm_excl_triplet = fit(MixedModel, h2b_fm_excl_triplet, jl_data_entrytime;contrasts=c_rt)")
-julia_command("h2b_fm_excl_item = fit(MixedModel, h2b_fm_excl_item, jl_data_entrytime;contrasts=c_rt)")
-  
-# Models 4: Exclude Two Random Effects
-julia_command("h2b_fm_excl_triplet_id = fit(MixedModel, h2b_fm_excl_triplet_id, jl_data_entrytime;contrasts=c_rt)")
+# # Model 1
+# julia_command("h2b_fm_complex = fit(MixedModel, h2b_fm_complex, jl_data_entrytime,contrasts=c_rt)")
+# 
+# # Models 2: Zero Correlation
+# julia_command("h2b_fm_trip_zc = fit(MixedModel, h2b_fm_triplet_zerocorr, jl_data_entrytime,contrasts=c_rt)")
+# julia_command("h2b_fm_trip_id_zc = fit(MixedModel, h2b_fm_triplet_id_zerocorr, jl_data_entrytime;contrasts=c_rt)")
+# julia_command("h2b_fm_trip_id_item_zc = fit(MixedModel, h2b_fm_triplet_id_item_zerocorr, jl_data_entrytime;contrasts=c_rt)")
+# 
+# # Models 3: Exclude One Random Effect
+# julia_command("h2b_fm_excl_id = fit(MixedModel, h2b_fm_excl_id, jl_data_entrytime;contrasts=c_rt)")
+# julia_command("h2b_fm_excl_triplet = fit(MixedModel, h2b_fm_excl_triplet, jl_data_entrytime;contrasts=c_rt)")
+# julia_command("h2b_fm_excl_item = fit(MixedModel, h2b_fm_excl_item, jl_data_entrytime;contrasts=c_rt)")
+#   
+# # Models 4: Exclude Two Random Effects
+# julia_command("h2b_fm_excl_triplet_id = fit(MixedModel, h2b_fm_excl_triplet_id, jl_data_entrytime;contrasts=c_rt)")
 julia_command("h2b_fm_excl_triplet_item = fit(MixedModel, h2b_fm_excl_triplet_item, jl_data_entrytime;contrasts=c_rt)")
-julia_command("h2b_fm_excl_id_item = fit(MixedModel, h2b_fm_excl_id_item, jl_data_entrytime;contrasts=c_rt)")
+# julia_command("h2b_fm_excl_id_item = fit(MixedModel, h2b_fm_excl_id_item, jl_data_entrytime;contrasts=c_rt)")
 ```
 
 ## Hypothesis 2b: Translate Models to R
 ```{r translate julia models for H2b}
-# Model 1: Complex Model
-# h2b_fm_complex <- julia_eval("robject(:lmerMod, Tuple([h2b_fm_complex,jl_data_entrytime]));",need_return="R")
-
-# Models 2: Zero Correlation
-h2b_fm_trip_zc <- julia_eval("robject(:lmerMod, Tuple([h2b_fm_trip_zc,jl_data_entrytime]));",need_return="R")
-h2b_fm_trip_id_zc <- julia_eval("robject(:lmerMod, Tuple([h2b_fm_trip_id_zc,jl_data_entrytime]));",need_return="R")
-# h2b_fm_trip_id_item_zc <- julia_eval("robject(:lmerMod, Tuple([h2b_fm_trip_id_item_zc,jl_data_entrytime]));",need_return="R")
-
-# Models 3: Exclude One Random Effect
-h2b_fm_excl_id <- julia_eval("robject(:lmerMod, Tuple([h2b_fm_excl_id,jl_data_entrytime]));",need_return="R")
-h2b_fm_excl_triplet <- julia_eval("robject(:lmerMod, Tuple([h2b_fm_excl_triplet,jl_data_entrytime]));",need_return="R")
-h2b_fm_excl_item <- julia_eval("robject(:lmerMod, Tuple([h2b_fm_excl_item,jl_data_entrytime]));",need_return="R")
-
-# Models 4: Exclude Two Random Effects
-h2b_fm_excl_triplet_id <- julia_eval("robject(:lmerMod, Tuple([h2b_fm_excl_triplet_id,jl_data_entrytime]));",need_return="R")
+# # Model 1: Complex Model
+# # h2b_fm_complex <- julia_eval("robject(:lmerMod, Tuple([h2b_fm_complex,jl_data_entrytime]));",need_return="R")
+# 
+# # Models 2: Zero Correlation
+# h2b_fm_trip_zc <- julia_eval("robject(:lmerMod, Tuple([h2b_fm_trip_zc,jl_data_entrytime]));",need_return="R")
+# h2b_fm_trip_id_zc <- julia_eval("robject(:lmerMod, Tuple([h2b_fm_trip_id_zc,jl_data_entrytime]));",need_return="R")
+# # h2b_fm_trip_id_item_zc <- julia_eval("robject(:lmerMod, Tuple([h2b_fm_trip_id_item_zc,jl_data_entrytime]));",need_return="R")
+# 
+# # Models 3: Exclude One Random Effect
+# h2b_fm_excl_id <- julia_eval("robject(:lmerMod, Tuple([h2b_fm_excl_id,jl_data_entrytime]));",need_return="R")
+# h2b_fm_excl_triplet <- julia_eval("robject(:lmerMod, Tuple([h2b_fm_excl_triplet,jl_data_entrytime]));",need_return="R")
+# h2b_fm_excl_item <- julia_eval("robject(:lmerMod, Tuple([h2b_fm_excl_item,jl_data_entrytime]));",need_return="R")
+# 
+# # Models 4: Exclude Two Random Effects
+# h2b_fm_excl_triplet_id <- julia_eval("robject(:lmerMod, Tuple([h2b_fm_excl_triplet_id,jl_data_entrytime]));",need_return="R")
 h2b_fm_excl_triplet_item <- julia_eval("robject(:lmerMod, Tuple([h2b_fm_excl_triplet_item,jl_data_entrytime]));",need_return="R")
-h2b_fm_excl_id_item <- julia_eval("robject(:lmerMod, Tuple([h2b_fm_excl_id_item,jl_data_entrytime]));",need_return="R")
+# h2b_fm_excl_id_item <- julia_eval("robject(:lmerMod, Tuple([h2b_fm_excl_id_item,jl_data_entrytime]));",need_return="R")
 ```
 
 ### Hypothesis 2b: Evaluate Best Fitting Model 
 ```{r evaluate best fitting model H2b}
 #h2b_fm_complex, h2b_fm_trip_id_item_zc
-anova(h2b_fm_trip_zc, h2b_fm_trip_id_zc, h2b_fm_excl_id, h2b_fm_excl_triplet, h2b_fm_excl_item, h2b_fm_excl_triplet_id, h2b_fm_excl_triplet_item, h2b_fm_excl_id_item)
+# anova(h2b_fm_trip_zc, h2b_fm_trip_id_zc, h2b_fm_excl_id, h2b_fm_excl_triplet, h2b_fm_excl_item, h2b_fm_excl_triplet_id, h2b_fm_excl_triplet_item, h2b_fm_excl_id_item)
 
 # best: h2b_fm_excl_triplet_item
 summary(h2b_fm_excl_triplet_item)
@@ -795,14 +847,6 @@ Patients with **OCD** and patients with **spider phobia** attend to **idiosyncra
 **Healthy participants** will **not show a bias** towards disorder-relevant stimuli compared to negative or neutral stimuli.
 
 ```{r h2b generalised hypotheses matrices}
-# H2b
-julia_command("h2b_fm_excl_triplet_item = @formula(rt ~ group*looked_at + looked_right*group+ 
-              (1 + looked_at + looked_right | participant))")
-
-julia_command("h2b_fm_excl_triplet_item = fit(MixedModel, h2b_fm_excl_triplet_item, jl_data_entrytime;contrasts=c_rt)")
-
-h2b_fm_excl_triplet_item <- julia_eval("robject(:lmerMod, Tuple([h2b_fm_excl_triplet_item,jl_data_entrytime]));",need_return="R")
-
 # Define the model comparisons to test the specific hypothesis of hypothesis 2
 g_h2b_directional = (glht(h2b_fm_excl_triplet_item, (c("looked_atocd + groupocd:looked_atocd <= 0", # Patients with OCD fixate faster on idiosyncratic OCD-relevant material as compared to neutral material (entry time bias within group)
                             "(looked_atocd + groupocd:looked_atocd) - (looked_atneg + groupocd:looked_atneg) <= 0", #Patients with OCD fixate faster on OCD-relevant material as compared to negative material (entry time bias within group)
@@ -908,3 +952,51 @@ Healthy participants are not sig. faster to first fixate at OCD-relevant stimuli
 Healthy participants are not sig. faster to first fixate spider-relevant stimuli compared to neutral stimuli.
 
 Healthy participants are not sig. faster to first fixate spider-relevant stimuli compared to negative stimuli.
+
+
+# Plots
+```{r plots for hypotheses}
+# H1
+h1_contrasts$names <- c("OCD - OCD-relevant (1) vs. neutral (0)", "OCD - OCD-relevant (1) vs. negative (0)", "OCD (1) vs. Non-Clinical (0) - OCD-relevant", "OCD (1) vs. Spider (0) - disorder-relevant")
+
+h1_plot <- ggplot(h1_contrasts, aes(x = names, y = Estimate)) + 
+  geom_point() + 
+  geom_errorbar(aes(ymin = lower, ymax = upper), width = 0.2) + 
+  labs(title = "Dwell-Time Difference", y = "Dwell Time Difference (in ms)", x = "Contrasts") +
+  theme(axis.text.x = element_text(angle = 45)) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) # Apply 45-degree rotation to x-axis labels 
+
+h1_plot
+
+# H2a
+h2a_contrasts$names <- c("OCD - OCD-relevant (0) vs. neutral (1)", "OCD - OCD-relevant (0) vs. negative (1)", 
+                            "Spider - spider-relevant (0) vs. neutral (1)", "Spider - spider-relevant (0) vs. negative (1)", 
+                            "Healthy - OCD-relevant (0) vs. neutra (1)l", "Healthy - OCD-relevant (0) vs. negative (1)",
+                            "Healthy - spider-relevant (0) vs. neutral (1)", "Healthy - spider-relevant (0) vs. negative (1)")
+
+h2a_contrasts <- h2a_contrasts %>%
+  dplyr::mutate(Estimate_perc = Estimate*100)
+h2a_plot <- ggplot(h2a_contrasts, aes(x = names, y = Estimate_perc)) + 
+  geom_point() + 
+  geom_errorbar(aes(ymin = lower*100, ymax = upper*100), width = 0.2) + 
+  labs(title = "First Fixation Choice", y = "Probability of First Fixation (in %)", x = "Contrasts") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+h2a_plot
+
+# H2b
+h2b_contrasts$names <- c("OCD - OCD-relevant (1) vs. neutral (0)", "OCD - OCD-relevant (1) vs. negative (0)", 
+                            "Spider - spider-relevant (1) vs. neutral (0)", "Spider - spider-relevant (1) vs. negative (0)", 
+                            "Healthy - OCD-relevant (1) vs. neutral (0)", "Healthy - OCD-relevant (1) vs. negative (0)",
+                            "Healthy - spider-relevant (1) vs. neutral (0)", "Healthy - spider-relevant (1) vs. negative (0)")
+
+h2b_plot <- ggplot(h2b_contrasts, aes(x = names, y = Estimate)) + 
+  geom_point() + 
+  geom_errorbar(aes(ymin = lower, ymax = upper), width = 0.2) + 
+  labs(title = "First Fixation Latency", y = "First Fixation Latency (in ms)", x = "Contrasts") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+
+h2b_plot
+```
