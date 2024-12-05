@@ -283,7 +283,7 @@ julia_command("h1_fm_excl_triplet_id = @formula(dwell_diff ~ group + stim_ocd + 
 
 # Model 4b: Exclude Triplet and Item
 julia_command("h1_fm_excl_triplet_item = @formula(dwell_diff ~ group + stim_ocd + stim_pho + stim_neg + group&stim_ocd + group&stim_pho + group&stim_neg + 
-              (1 stim_ocd + stim_pho + stim_neg | participant))")
+              (1 + stim_ocd + stim_pho + stim_neg | participant))")
 
 # Model 4c: Exclude Participant and Item
 julia_command("h1_fm_excl_id_item = @formula(dwell_diff ~ group + stim_ocd + stim_pho + stim_neg + group&stim_ocd + group&stim_pho + group&stim_neg + 
@@ -307,76 +307,9 @@ julia_command("h1_fm_excl_id_item = @formula(dwell_diff ~ group + stim_ocd + sti
 #   
 # # Models 4: Exclude Two Random Effects
 # julia_command("h1_fm_excl_triplet_id = fit(LinearMixedModel, h1_fm_excl_triplet_id, jl_data_dwelltime)")
-julia_command("h1_fm_excl_triplet_item = fit(LinearMixedModel, h1_fm_excl_triplet_item, jl_data_dwelltime, optimizer = NLopt.Optimizer(:LN_BOBYQA) do opt
-                opt.maxeval = 10000
-            end)")
+julia_command("h1_fm_excl_triplet_item = fit(LinearMixedModel, h1_fm_excl_triplet_item, jl_data_dwelltime)")
 # julia_command("h1_fm_excl_id_item = fit(LinearMixedModel, h1_fm_excl_id_item, jl_data_dwelltime)")
 ```
-```{julia}
-using MixedModels
-using NLopt
-
-# Define the optimization options
-opt = NLopt.Options(:LN_BOBYQA)
-opt.maxeval = 10000  # Set maximum evaluations
-
-# Define the model formula
-h1_fm_excl_triplet_item = @formula(dwell_diff ~ group + stim_ocd + stim_pho + stim_neg +
-                                   group & stim_ocd + group & stim_pho + group & stim_neg +
-                                   (1 | participant))
-
-# Fit the mixed model with custom optimization options
-model = fit(MixedModel, h1_fm_excl_triplet_item, data, optimizer = opt)
-
-# Print the model summary
-println(model)
-
-```
-```{r}
-# Load necessary Julia packages
-julia_command("using MixedModels")
-julia_command("using NLopt")
-
-julia_command("opt = Opt(:LN_BOBYQA, 2)")  # Adjust '2' to the number of variables in your problem
-julia_command("opt.maxeval = 10000")
-julia_command("h1_fm_excl_triplet_item = fit(LinearMixedModel, h1_fm_excl_triplet_item, jl_data_dwelltime)")
-
-julia_command("h1_fm_excl_triplet_item = fit(LinearMixedModel, h1_fm_excl_triplet_item, jl_data_dwelltime, optimizer = NLopt.Optimizer(:LN_BOBYQA) do opt
-                opt.maxeval = 10000
-            end)")
-
-data_dwelltime_ <- data_dwelltime %>%
-  dplyr::mutate(stim_ocd = as.factor(stim_ocd),
-                stim_pho = as.factor(stim_pho),
-                stim_neg = as.factor(stim_neg))
-modeltest <- lmer(dwell_diff ~ group + stim_ocd + stim_pho + stim_neg + (1 + stim_ocd + stim_pho + stim_neg | participant),
-     data = data_dwelltime_, control = lmerControl(optimizer = "optimx", optCtrl = list(method = "nlminb")))
-
-modeltest
-summary(modeltest)
-```
-
-
-```{julia }
-using MixedModels
-using NLopt
-
-# Define the model formula
-h1_fm_excl_triplet_item = @formula(dwell_diff ~ group + stim_ocd + stim_pho + stim_neg +
-                                   group & stim_ocd + group & stim_pho + group & stim_neg + 
-                                   (1 | participant))
-
-# Fit the model with a higher maxeval for the optimizer
-model = fit(MixedModel, h1_fm_excl_triplet_item, data,
-            optimizer = NLopt.Optimizer(:LN_BOBYQA) do opt
-                opt.maxeval = 10000
-            end)
-
-# Print the summary of the fitted model
-println(model)
-
-```
-
 
 
 ## Hypothesis 1: Translate Models to R
@@ -414,6 +347,7 @@ tab_model(h1_fm_excl_triplet_item)
 tab_model(h1_fm_excl_triplet_item, file = "/Volumes/109-psy-kp-study/044_EYE/06_Results/02_Hauptstudie/MaintenanceBias/summary_h1_fm_excl_triplet_item.doc")
 ```
 
+
 ## Hypothesis 1: Test of Hypotheses With Contrasts
 To establish contrast codes that directly test the hypotheses, we first code the hypotheses we want to test. Then, we fit the established effects in the contrast() function. This function allows direct inspection of effects. The p-values are estimated by the Satterthwaite method. The p-values are unadjusted.
 
@@ -450,6 +384,7 @@ datatable(h1_contrasts)
 # Export
 write_xlsx(h1_contrasts, "/Volumes/109-psy-kp-study/044_EYE/06_Results/02_Hauptstudie/MaintenanceBias/h1_contrasts.xlsx")
 ```
+
 *Guideline of Interpretation:*
 **1. Contrast: OCD vs. neutral in OCD group**
 
@@ -540,6 +475,102 @@ write_xlsx(h1_contrasts_excl0, "/Volumes/109-psy-kp-study/044_EYE/06_Results/02_
 ```
 Replicates results shown with total dataset. 
 
+
+# Testing Convergence Issue of H1 With Julia
+```{julia h1 mimic in julia - step 1 set up model}
+# Define model
+h1_fm_excl_triplet_item = @formula(dwell_diff ~ group + stim_ocd + stim_pho + stim_neg + group&stim_ocd + group&stim_pho + group&stim_neg + 
+              (1 + stim_ocd + stim_pho + stim_neg | participant))
+
+# Calculate model
+h1_fm_excl_triplet_item = fit(LinearMixedModel, h1_fm_excl_triplet_item, jl_data_dwelltime)
+```
+
+
+```{julia h1 mimic in julia - step 2 check convergence}
+println(h1_fm_excl_triplet_item)
+```
+
+
+```{julia h1 mimic in julia - step 2 check convergence 2}
+println(h1_fm_excl_triplet_item.optsum)
+```
+*Converged successfully*
+
+
+```{julia h1 mimic in julia - contrast coding}
+Pkg.add("DataFrames")
+Pkg.add("PrettyTables")
+Pkg.add("Distributions")
+using DataFrames, MixedModels, LinearAlgebra, PrettyTables
+
+# Extract fixed effects and covariance matrix
+fixed_effects = coefnames(h1_fm_excl_triplet_item)         # Names of fixed effects
+coefficients = fixef(h1_fm_excl_triplet_item)             # Fixed effect estimates
+covariance_matrix = vcov(h1_fm_excl_triplet_item)         # Covariance matrix of fixed effects
+
+
+# Define contrasts
+contrast_matrix = [
+    Dict("stim_ocd" => 1, "group: ocd & stim_ocd" => 1),
+    Dict("stim_ocd" => 1, "group: ocd & stim_ocd" => 1, 
+         "stim_neg" => -1, "group: ocd & stim_neg" => -1),
+    Dict("group: ocd" => 1, "group: ocd & stim_ocd" => 1),
+    Dict("group: ocd" => 1, "stim_ocd" => 1, "group: ocd & stim_ocd" => 1,
+         "group: spider" => -1, "stim_pho" => -1, "group: spider & stim_pho" => -1)
+]
+
+# Compute contrasts
+contrast_results = []
+for contrast in contrast_matrix
+    contrast_vector = zeros(length(fixed_effects))  # Initialize contrast vector
+    for (name, weight) in contrast
+        index = findfirst(==(name), fixed_effects)  # Find index of name in fixed_effects
+        if index !== nothing
+            contrast_vector[index] = weight
+        else
+            println("Warning: Term not found in fixed effects: ", name)
+        end
+    end
+
+    # Calculate contrast value and standard error
+    contrast_value = dot(coefficients, contrast_vector)
+    contrast_variance = transpose(contrast_vector) * covariance_matrix * contrast_vector
+    contrast_se = sqrt(contrast_variance)
+
+    # Store results
+    push!(contrast_results, (contrast_value, contrast_se))
+end
+
+# Create a DataFrame for the results
+contrast_names = ["Stim OCD vs Neutral (OCD Group)", 
+                  "Stim OCD vs Negative (OCD Group)",
+                  "OCD vs Healthy on Stim OCD",
+                  "OCD vs Spider on Stim Disorder Relevant"]
+
+using Distributions
+results_df = DataFrame(
+    Contrast = contrast_names,
+    Estimate = [result[1] for result in contrast_results],
+    SE = [result[2] for result in contrast_results],
+    t_value = [result[1] / result[2] for result in contrast_results],
+    p_value = [2 * (1 - cdf(Normal(0, 1), abs(result[1] / result[2]))) for result in contrast_results]
+)
+
+Pkg.add("CSV")
+using CSV
+# Round values for better presentation
+for col in [:Estimate, :SE, :t_value, :p_value]
+    results_df[!, col] = round.(results_df[!, col], digits=3)
+end
+
+# Print the table
+pretty_table(results_df)
+
+# Save the results to CSV
+CSV.write("/Volumes/109-psy-kp-study/044_EYE/06_Results/02_Hauptstudie/TryOut/Models_and_Contrasts_with_Julia/h1_contrasts.csv", results_df)
+```
+
 # Hypothesis 2: Vigilance Bias 
 **From Complex to Simple Multilevel Models**
 ## Hypothesis 2a: Choice (wo Entry Time)
@@ -589,7 +620,7 @@ julia_command("h2a_glm_fm_excl_triplet_id = @formula(response ~ group + stim_ocd
 
 # Model 4b: Exclude Triplet and Item
 julia_command("h2a_glm_fm_excl_triplet_item = @formula(response ~ group + stim_ocd + stim_pho + stim_neg + group&stim_ocd + group&stim_pho + group&stim_neg + 
-              (1 + stim_ocd + stim_pho + stim_neg | participant))")
+              zerocorr(1 + stim_ocd + stim_pho + stim_neg | participant))")
 
 # Model 4c: Exclude Participant and Item
 julia_command("h2a_glm_fm_excl_id_item = @formula(response ~ group + stim_ocd + stim_pho + stim_neg + group&stim_ocd + group&stim_pho + group&stim_neg + 
@@ -791,6 +822,139 @@ Healthy participants are sig. more likely to first fixate spider-relevant stimul
 
 Healthy participants are sig. more likely to first fixate spider-relevant stimuli compared to negative stimuli.
 
+# Testing Convergence Issue of H2a With Julia
+
+```{julia h2a mimic in julia - step 1 set up model}
+# Define model
+h2a_glm_fm_excl_triplet_item = @formula(response ~ group + stim_ocd + stim_pho + stim_neg + group&stim_ocd + group&stim_pho + group&stim_neg + 
+              (1 + stim_ocd + stim_pho + stim_neg | participant))
+
+# Calculate model
+h2a_glm_fm_excl_triplet_item = fit(LinearMixedModel, h2a_glm_fm_excl_triplet_item, jl_data_entrytime)
+```
+
+
+```{julia h2a mimic in julia - step 2 check convergence }
+println(h2a_glm_fm_excl_triplet_item)
+```
+
+
+```{julia h2a mimic in julia - step 2 check convergence 2}
+println(h2a_glm_fm_excl_triplet_item.optsum)
+```
+
+
+```{julia h2a mimic in julia - contrast coding}
+Pkg.add("DataFrames")
+Pkg.add("PrettyTables")
+Pkg.add("Distributions")
+using DataFrames, MixedModels, LinearAlgebra, PrettyTables
+
+# Extract fixed effects and covariance matrix
+fixed_effects = coefnames(h2a_glm_fm_excl_triplet_item)    # Names of fixed effects
+coefficients = fixef(h2a_glm_fm_excl_triplet_item)        # Fixed effect estimates
+covariance_matrix = vcov(h2a_glm_fm_excl_triplet_item)    # Covariance matrix of fixed effects
+
+# Define directional contrasts
+directional_contrasts = [
+    Dict("stim_ocd" => 1, "group: ocd & stim_ocd" => 1),
+    Dict("stim_ocd" => 1, "group: ocd & stim_ocd" => 1, 
+         "stim_neg" => -1, "group: ocd & stim_neg" => -1),
+    Dict("stim_pho" => 1, "group: spider & stim_pho" => 1),
+    Dict("stim_pho" => 1, "group: spider & stim_pho" => 1, 
+         "stim_neg" => -1, "group: spider & stim_neg" => -1)
+]
+
+# Define equality contrasts
+equality_contrasts = [
+    Dict("stim_ocd" => 1),
+    Dict("stim_ocd" => 1, "stim_neg" => -1),
+    Dict("stim_pho" => 1),
+    Dict("stim_pho" => 1, "stim_neg" => -1)
+]
+
+# Function to compute contrasts
+function compute_contrasts(contrasts, fixed_effects, coefficients, covariance_matrix)
+    results = []
+    for contrast in contrasts
+        contrast_vector = zeros(length(fixed_effects))
+        for (name, weight) in contrast
+            index = findfirst(==(name), fixed_effects)
+            if index !== nothing
+                contrast_vector[index] = weight
+            else
+                println("Warning: Term not found: ", name)
+            end
+        end
+        value = dot(coefficients, contrast_vector)
+        variance = transpose(contrast_vector) * covariance_matrix * contrast_vector
+        se = sqrt(variance)
+        push!(results, (value, se))
+    end
+    return results
+end
+
+# Compute directional contrasts
+directional_results = compute_contrasts(directional_contrasts, fixed_effects, coefficients, covariance_matrix)
+
+# Compute equality contrasts
+equality_results = compute_contrasts(equality_contrasts, fixed_effects, coefficients, covariance_matrix)
+
+# Create DataFrames
+using Distributions
+
+directional_names = [
+    "Stim OCD vs Neutral (OCD Group)", 
+    "Stim OCD vs Negative (OCD Group)", 
+    "Stim Pho vs Neutral (Spider Group)", 
+    "Stim Pho vs Negative (Spider Group)"
+]
+
+equality_names = [
+    "Stim OCD = 0 (Healthy Group)", 
+    "Stim OCD - Stim Neg = 0 (Healthy Group)", 
+    "Stim Pho = 0 (Healthy Group)", 
+    "Stim Pho - Stim Neg = 0 (Healthy Group)"
+]
+
+h2a_dir_results_df = DataFrame(
+    Contrast = directional_names,
+    Estimate = [result[1] for result in directional_results],
+    SE = [result[2] for result in directional_results],
+    t_value = [result[1] / result[2] for result in directional_results],
+    p_value = [1 - cdf(Normal(0, 1), result[1] / result[2]) for result in directional_results]  # One-tailed
+)
+
+h2a_eq_results_df = DataFrame(
+    Contrast = equality_names,
+    Estimate = [result[1] for result in equality_results],
+    SE = [result[2] for result in equality_results],
+    t_value = [result[1] / result[2] for result in equality_results],
+    p_value = [2 * (1 - cdf(Normal(0, 1), abs(result[1] / result[2]))) for result in equality_results]  # Two-tailed
+)
+
+Pkg.add("CSV")
+using CSV
+
+# Round values for better presentation
+for df in [h2a_dir_results_df, h2a_eq_results_df]
+    for col in [:Estimate, :SE, :t_value, :p_value]
+        df[!, col] = round.(df[!, col], digits=3)
+    end
+end
+
+# Print the tables
+println("Directional Contrasts:")
+pretty_table(h2a_dir_results_df)
+
+println("Equality Contrasts:")
+pretty_table(h2a_eq_results_df)
+
+# Save the results to CSV
+CSV.write("/Volumes/109-psy-kp-study/044_EYE/06_Results/02_Hauptstudie/TryOut/Models_and_Contrasts_with_Julia/h2a_directional_contrasts.csv", h2a_dir_results_df)
+CSV.write("/Volumes/109-psy-kp-study/044_EYE/06_Results/02_Hauptstudie/TryOut/Models_and_Contrasts_with_Julia/h2a_equality_contrasts.csv", h2a_eq_results_df)
+```
+
 ## Hypothesis 2b: Entry Time
 ```{r create julia models for H2b reaction time}
 # Model 1: Most Complex Model
@@ -838,8 +1002,10 @@ julia_command("h2b_fm_excl_triplet_id = @formula(rt ~ group*looked_at + looked_r
               (1 + group | picture_pair_countingindex))")
 
 # Model 4b: Exclude Triplet and Item
+# julia_command("h2b_fm_excl_triplet_item = @formula(rt ~ group*looked_at + looked_right*group+ 
+              # (1 + looked_at + looked_right | participant))") 
 julia_command("h2b_fm_excl_triplet_item = @formula(rt ~ group*looked_at + looked_right*group+ 
-              (1 + looked_at + looked_right | participant))")
+              (1 | participant))") # removed random slopes as the model (that was best-fitting) hat a singularity warning - zerocorr() did not remove the warning, removing one RS as well, so both were removed
 
 # Model 4c: Exclude Participant and Item
 julia_command("h2b_fm_excl_id_item = @formula(rt ~ group*looked_at + looked_right*group+
@@ -902,7 +1068,6 @@ h2b_fm_excl_triplet_item <- julia_eval("robject(:lmerMod, Tuple([h2b_fm_excl_tri
 ```{r evaluate best fitting model H2b}
 #h2b_fm_complex, h2b_fm_trip_id_item_zc
 # anova(h2b_fm_trip_zc, h2b_fm_trip_id_zc, h2b_fm_excl_id, h2b_fm_excl_triplet, h2b_fm_excl_item, h2b_fm_excl_triplet_id, h2b_fm_excl_triplet_item, h2b_fm_excl_id_item)
-
 # best: h2b_fm_excl_triplet_item
 summary(h2b_fm_excl_triplet_item)
 tab_model(h2b_fm_excl_triplet_item)
@@ -1070,3 +1235,150 @@ h2b_plot <- ggplot(h2b_contrasts, aes(x = names, y = Estimate)) +
 
 h2b_plot
 ```
+
+
+# Testing Convergence Issue of H2b With Julia
+```{julia h2b mimic in julia - step 1 set up model}
+# Define coding
+c_rt = Dict(:group=>DummyCoding(;base="healthy"),:looked_right=>EffectsCoding(),:looked_at=>DummyCoding(;base="neutral"))
+
+# Define model
+
+h2b_fm_excl_triplet_item = @formula(rt ~ group*looked_at + looked_right*group + 
+              (1 + looked_at + looked_right | participant))
+
+# Calculate model
+h2b_fm_excl_triplet_item = fit(LinearMixedModel, h2b_fm_excl_triplet_item, jl_data_entrytime; contrasts=c_rt)
+```
+
+
+```{julia h2b mimic in julia - step 2 check convergence}
+println(h2b_fm_excl_triplet_item)
+```
+
+
+```{julia h2b mimic in julia - step 2 check convergence 2}
+println(h2b_fm_excl_triplet_item.optsum)
+```
+
+
+```{julia h2b mimic in julia - contrast coding}
+Pkg.add("DataFrames")
+Pkg.add("PrettyTables")
+Pkg.add("Distributions")
+using DataFrames, MixedModels, LinearAlgebra, PrettyTables
+
+# Extract fixed effects and covariance matrix
+fixed_effects = coefnames(h2b_fm_excl_triplet_item)         # Names of fixed effects
+coefficients = fixef(h2b_fm_excl_triplet_item)             # Fixed effect estimates
+covariance_matrix = vcov(h2b_fm_excl_triplet_item)         # Covariance matrix of fixed effects
+
+# Define contrasts for directional hypotheses
+contrast_matrix_directional = [
+    Dict("looked_at: ocd" => 1, "group: ocd & looked_at: ocd" => 1),  # OCD-relevant vs Neutral (OCD Group)
+    Dict("looked_at: ocd" => 1, "group: ocd & looked_at: ocd" => 1, 
+         "looked_at: neg" => -1, "group: ocd & looked_at: neg" => -1),  # OCD-relevant vs Negative (OCD Group)
+    Dict("looked_at: pho" => 1, "group: spider & looked_at: pho" => 1),  # Spider-relevant vs Neutral (Spider Group)
+    Dict("looked_at: pho" => 1, "group: spider & looked_at: pho" => 1, 
+         "looked_at: neg" => -1, "group: spider & looked_at: neg" => -1)  # Spider-relevant vs Negative (Spider Group)
+]
+
+# Compute contrasts for directional hypotheses
+contrast_results_directional = []
+for contrast in contrast_matrix_directional
+    contrast_vector = zeros(length(fixed_effects))  # Initialize contrast vector
+    for (name, weight) in contrast
+        index = findfirst(==(name), fixed_effects)  # Find index of name in fixed_effects
+        if index !== nothing
+            contrast_vector[index] = weight
+        else
+            println("Warning: Term not found in fixed effects: ", name)
+        end
+    end
+
+    # Calculate contrast value and standard error
+    contrast_value = dot(coefficients, contrast_vector)
+    contrast_variance = transpose(contrast_vector) * covariance_matrix * contrast_vector
+    contrast_se = sqrt(contrast_variance)
+
+    # Store results
+    push!(contrast_results_directional, (contrast_value, contrast_se))
+end
+
+# Define contrasts for equality hypotheses
+contrast_matrix_equality = [
+    Dict("looked_at: ocd" => 1),  # OCD-relevant = Neutral (Healthy Group)
+    Dict("looked_at: ocd" => 1, "looked_at: neg" => -1),  # OCD-relevant = Negative (Healthy Group)
+    Dict("looked_at: pho" => 1),  # Spider-relevant = Neutral (Healthy Group)
+    Dict("looked_at: pho" => 1, "looked_at: neg" => -1)  # Spider-relevant = Negative (Healthy Group)
+]
+
+# Compute contrasts for equality hypotheses
+contrast_results_equality = []
+for contrast in contrast_matrix_equality
+    contrast_vector = zeros(length(fixed_effects))  # Initialize contrast vector
+    for (name, weight) in contrast
+        index = findfirst(==(name), fixed_effects)  # Find index of name in fixed_effects
+        if index !== nothing
+            contrast_vector[index] = weight
+        else
+            println("Warning: Term not found in fixed effects: ", name)
+        end
+    end
+
+    # Calculate contrast value and standard error
+    contrast_value = dot(coefficients, contrast_vector)
+    contrast_variance = transpose(contrast_vector) * covariance_matrix * contrast_vector
+    contrast_se = sqrt(contrast_variance)
+
+    # Store results
+    push!(contrast_results_equality, (contrast_value, contrast_se))
+end
+
+# Create DataFrames for results
+using Distributions
+contrast_names_directional = ["OCD-relevant vs Neutral (OCD Group)",
+                              "OCD-relevant vs Negative (OCD Group)",
+                              "Spider-relevant vs Neutral (Spider Group)",
+                              "Spider-relevant vs Negative (Spider Group)"]
+
+contrast_names_equality = ["OCD-relevant = Neutral (Healthy Group)",
+                           "OCD-relevant = Negative (Healthy Group)",
+                           "Spider-relevant = Neutral (Healthy Group)",
+                           "Spider-relevant = Negative (Healthy Group)"]
+
+h2b_dir_results_df = DataFrame(
+    Contrast = contrast_names_directional,
+    Estimate = [result[1] for result in contrast_results_directional],
+    SE = [result[2] for result in contrast_results_directional],
+    t_value = [result[1] / result[2] for result in contrast_results_directional],
+    p_value = [2 * (1 - cdf(Normal(0, 1), abs(result[1] / result[2]))) for result in contrast_results_directional]
+)
+
+
+
+h2b_eq_results_df = DataFrame(
+    Contrast = contrast_names_equality,
+    Estimate = [result[1] for result in contrast_results_equality],
+    SE = [result[2] for result in contrast_results_equality],
+    t_value = [result[1] / result[2] for result in contrast_results_equality],
+    p_value = [2 * (1 - cdf(Normal(0, 1), abs(result[1] / result[2]))) for result in contrast_results_equality]
+)
+
+Pkg.add("CSV")
+using CSV
+# Round values for better presentation
+for col in [:Estimate, :SE, :t_value, :p_value]
+    h2b_dir_results_df[!, col] = round.(h2b_dir_results_df[!, col], digits=3)
+    h2b_eq_results_df[!, col] = round.(h2b_eq_results_df[!, col], digits=3)
+end
+
+# Print the tables
+pretty_table(h2b_dir_results_df)
+pretty_table(h2b_eq_results_df)
+
+# Save the results to CSV
+CSV.write("/Volumes/109-psy-kp-study/044_EYE/06_Results/02_Hauptstudie/TryOut/Models_and_Contrasts_with_Julia/h2b_directional_contrasts.csv", h2b_dir_results_df)
+CSV.write("/Volumes/109-psy-kp-study/044_EYE/06_Results/02_Hauptstudie/TryOut/Models_and_Contrasts_with_Julia/h2b_equality_contrasts.csv", h2b_eq_results_df)
+```
+
